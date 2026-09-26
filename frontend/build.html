@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Builder</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .builder-section {
+            border: 1px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: rgba(252, 226, 5, 0.05);
+        }
+        .builder-section h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; color: var(--secondary-color); }
+        .field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .field-row label {
+            flex: 1;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .field-row select, .field-row input {
+            flex: 3;
+            margin-bottom: 0;
+            text-overflow: ellipsis;
+            min-width: 0; /* Prevents overflow pushing */
+        }
+        .roll-btn {
+            width: auto; /* Overrides global 100% width on buttons */
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .roll-btn:hover {
+            background-color: var(--primary-color);
+            color: var(--bg-color);
+        }
+        #completionTracker {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .complete { color: #00ff00; }
+        .incomplete { color: var(--error-color); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Character Builder</h1>
+            <div style="display: flex; gap: 15px;">
+                <a href="#" id="viewSheetLink" style="color: var(--secondary-color); font-weight: bold;">View Character Sheet</a>
+                <a href="#" id="backLink" style="color: var(--primary-color);">Back to Lobby</a>
+            </div>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="panel" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label for="rolePicker" style="font-size: 1.2rem; font-weight: bold;">Select Role:</label>
+                <select id="rolePicker" style="width: 250px; margin: 0; font-size: 1.1rem;">
+                    <option value="">-- Choose Role --</option>
+                </select>
+            </div>
+            <div id="completionTracker" class="incomplete">0 / 0 Fields Complete</div>
+        </div>
+
+        <div id="builderContent" style="display: none;">
+            <div class="builder-section" id="sharedSection">
+                <h2>Shared Lifepath</h2>
+                <div id="sharedFieldsContainer"></div>
+            </div>
+
+            <div class="builder-section" id="factionSection">
+                <h2>Friends & Enemies</h2>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; border-right: 1px solid var(--border-color); padding-right: 20px;">
+                        <h3>Friend Faction</h3>
+                        <div id="friendFactionContainer"></div>
+                    </div>
+                    <div style="flex: 1; padding-left: 10px;">
+                        <h3>Enemy Faction</h3>
+                        <div id="enemyFactionContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="builder-section" id="roleSpecificSection">
+                <h2>Role-Specific Lifepath</h2>
+                <div id="roleSpecificContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { checkAuth } from './js/auth.js';
+        import { apiFetch } from './js/api.js';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        const charId = urlParams.get('char');
+        
+        let character = null;
+        let lifepathData = { shared: {}, factions: {}, roles: {} };
+        let allRoles = [];
+        
+        // Maps DB columns to JSON keys
+        const sharedFieldsMap = [
+            { db: 'cultural_origin', json: 'culturalOrigin' },
+            { db: 'personality', json: 'personality' },
+            { db: 'clothing_style', json: 'clothingStyle' },
+            { db: 'hairstyle', json: 'hairstyle' },
+            { db: 'affectation', json: 'affectation' },
+            { db: 'value_most', json: 'valueMost' },
+            { db: 'feelings_about_people', json: 'feelingsAboutPeople' },
+            { db: 'most_valued_person', json: 'mostValuedPerson' },
+            { db: 'most_valued_possession', json: 'mostValuedPossession' },
+            { db: 'family_background', json: 'familyBackground' },
+            { db: 'childhood_environment', json: 'childhoodEnvironment' },
+            { db: 'family_crisis', json: 'familyCrisis' },
+            { db: 'life_goals', json: 'lifeGoals' }
+        ];
+
+        document.getElementById('backLink').href = `lobby.html?id=${sessionId}`;
+        document.getElementById('viewSheetLink').href = `character.html?session=${sessionId}&char=${charId}`;
+
+        const alertBox = document.getElementById('alertBox');
+        function showAlert(msg) {
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.style.display='none', 3000);
+        }
+
+        function rollOption(options) {
+            if (!options || options.length === 0) return null;
+            const index = Math.floor(Math.random() * options.length);
+            return options[index].id;
+        }
+
+        async function saveField(payload) {
+            try {
+                const res = await apiFetch(`/sessions/${sessionId}/characters/${charId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload)
+                });
+                character.lifepath_complete = res.character.lifepath_complete;
+                if(res.character.role_specific_lifepath) {
+                    character.role_specific_lifepath = res.character.role_specific_lifepath;
+                }
+                updateCompletionTracker();
+            } catch (err) {
+                showAlert(err.message);
+                // Revert on failure by reloading
+                await loadCharacter();
+            }
+        }
+
+        function createFieldRow(label, options, currentValue, onChange) {
+            const container = document.createElement('div');
+            
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            
+            const lbl = document.createElement('label');
+            lbl.textContent = label;
+            
+            const sel = document.createElement('select');
+            sel.innerHTML = `<option value="">-- Select --</option>` + 
+                options.map(o => `<option value="${o.id}">${o.text}</option>`).join('');
+            sel.value = currentValue || '';
+
+            const desc = document.createElement('div');
+            desc.style.fontSize = '0.85rem';
+            desc.style.color = '#aaaaaa';
+            desc.style.marginTop = '-10px';
+            desc.style.marginBottom = '15px';
+            desc.style.paddingLeft = 'calc(25% + 10px)'; // Matches the flex: 1 label layout roughly
+            desc.style.display = 'none';
+
+            function updateDesc(val) {
+                const opt = options.find(o => o.id === val);
+                if (opt && opt.description) {
+                    desc.textContent = opt.description;
+                    desc.style.display = 'block';
+                } else {
+                    desc.style.display = 'none';
+                }
+            }
+            updateDesc(sel.value);
+
+            sel.onchange = (e) => {
+                updateDesc(e.target.value);
+                onChange(e.target.value);
+            };
+            
+            const rollBtn = document.createElement('button');
+            rollBtn.className = 'roll-btn';
+            rollBtn.innerHTML = `🎲 Roll`;
+            rollBtn.onclick = () => {
+                const rolled = rollOption(options);
+                if (rolled) {
+                    sel.value = rolled;
+                    updateDesc(rolled);
+                    onChange(rolled);
+                }
+            };
+            
+            row.appendChild(lbl);
+            row.appendChild(sel);
+            row.appendChild(rollBtn);
+            
+            container.appendChild(row);
+            container.appendChild(desc);
+            return container;
+        }
+
+        function createTextInputRow(label, currentValue, onChange) {
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            const lbl = document.createElement('label');
+            lbl.textContent = label;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = currentValue || '';
+            // Debounce save on text input
+            let timeout = null;
+            inp.oninput = (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => onChange(e.target.value), 500);
+            };
+            row.appendChild(lbl);
+            row.appendChild(inp);
+            return row;
+        }
+
+        function renderBuilder() {
+            if (!character.role_key) {
+                document.getElementById('builderContent').style.display = 'none';
+                return;
+            }
+            document.getElementById('builderContent').style.display = 'block';
+
+            // Shared
+            const sharedCont = document.getElementById('sharedFieldsContainer');
+            sharedCont.innerHTML = '';
+            sharedFieldsMap.forEach(f => {
+                const tableData = lifepathData.shared[f.json];
+                if (tableData) {
+                    sharedCont.appendChild(createFieldRow(tableData.label, tableData.options, character[f.db], (val) => {
+                        character[f.db] = val;
+                        saveField({ [f.db]: val });
+                    }));
+                }
+            });
+
+            // Factions
+            const friendCont = document.getElementById('friendFactionContainer');
+            friendCont.innerHTML = '';
+            friendCont.appendChild(createFieldRow('Faction Type', lifepathData.factions.types.options, character.friend_faction_type, (val) => {
+                character.friend_faction_type = val; saveField({ friend_faction_type: val });
+            }));
+            friendCont.appendChild(createTextInputRow('Faction Name', character.friend_faction_name, (val) => {
+                character.friend_faction_name = val; saveField({ friend_faction_name: val });
+            }));
+            friendCont.appendChild(createFieldRow('Feeling', lifepathData.factions.feelings.friendFeelings.options, character.friend_faction_feeling, (val) => {
+                character.friend_faction_feeling = val; saveField({ friend_faction_feeling: val });
+            }));
+
+            const enemyCont = document.getElementById('enemyFactionContainer');
+            enemyCont.innerHTML = '';
+            enemyCont.appendChild(createFieldRow('Faction Type', lifepathData.factions.types.options, character.enemy_faction_type, (val) => {
+                character.enemy_faction_type = val; saveField({ enemy_faction_type: val });
+            }));
+            enemyCont.appendChild(createTextInputRow('Faction Name', character.enemy_faction_name, (val) => {
+                character.enemy_faction_name = val; saveField({ enemy_faction_name: val });
+            }));
+            enemyCont.appendChild(createFieldRow('Feeling', lifepathData.factions.feelings.enemyFeelings.options, character.enemy_faction_feeling, (val) => {
+                character.enemy_faction_feeling = val; saveField({ enemy_faction_feeling: val });
+            }));
+
+            // Role Specific
+            const specificCont = document.getElementById('roleSpecificContainer');
+            specificCont.innerHTML = '';
+            const roleData = lifepathData.roles[character.role_key];
+            if (roleData && roleData.tables) {
+                Object.keys(roleData.tables).forEach(tableKey => {
+                    const table = roleData.tables[tableKey];
+                    const currentVal = (character.role_specific_lifepath || {})[tableKey];
+                    specificCont.appendChild(createFieldRow(table.label, table.options, currentVal, (val) => {
+                        saveField({ role_specific_lifepath: { [tableKey]: val } });
+                    }));
+                });
+            }
+
+            updateCompletionTracker();
+        }
+
+        function updateCompletionTracker() {
+            let total = 0;
+            let filled = 0;
+
+            if (!character.role_key) {
+                document.getElementById('completionTracker').textContent = `Please select a role first`;
+                document.getElementById('completionTracker').className = 'incomplete';
+                return;
+            }
+
+            // Shared
+            total += sharedFieldsMap.length;
+            sharedFieldsMap.forEach(f => { if(character[f.db]) filled++; });
+
+            // Factions
+            total += 6;
+            if(character.friend_faction_type) filled++;
+            if(character.friend_faction_name) filled++;
+            if(character.friend_faction_feeling) filled++;
+            if(character.enemy_faction_type) filled++;
+            if(character.enemy_faction_name) filled++;
+            if(character.enemy_faction_feeling) filled++;
+
+            // Role Specific
+            const roleData = lifepathData.roles[character.role_key];
+            if (roleData && roleData.tables) {
+                const specKeys = Object.keys(roleData.tables);
+                total += specKeys.length;
+                specKeys.forEach(k => {
+                    if(character.role_specific_lifepath && character.role_specific_lifepath[k]) filled++;
+                });
+            }
+
+            const tracker = document.getElementById('completionTracker');
+            tracker.textContent = `${filled} / ${total} Fields Complete`;
+            if (character.lifepath_complete) {
+                tracker.textContent += ' ✅ READY';
+                tracker.className = 'complete';
+            } else {
+                tracker.className = 'incomplete';
+            }
+        }
+
+        document.getElementById('rolePicker').addEventListener('change', async (e) => {
+            const newRole = e.target.value;
+            if (!newRole) return;
+
+            if (character.role_key && character.role_key !== newRole) {
+                const confirmChange = confirm("Changing your role will clear your existing role-specific lifepath choices. Are you sure?");
+                if (!confirmChange) {
+                    e.target.value = character.role_key;
+                    return;
+                }
+            }
+
+            character.role_key = newRole;
+            await saveField({ role_key: newRole });
+            // Refresh to get cleared specifics
+            await loadCharacter();
+        });
+
+        async function loadCharacter() {
+            character = await apiFetch(`/sessions/${sessionId}/characters/${charId}`);
+            document.getElementById('rolePicker').value = character.role_key || '';
+            renderBuilder();
+        }
+
+        async function init() {
+            if (!sessionId || !charId) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            const user = await checkAuth();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Fetch Data Files
+                const [r, shared, factions, roles] = await Promise.all([
+                    fetch('data/roles.json').then(res => res.json()),
+                    fetch('data/lifepathShared.json').then(res => res.json()),
+                    fetch('data/factionTypes.json').then(typesRes => 
+                        fetch('data/factionFeelings.json').then(feelRes => 
+                            Promise.all([typesRes.json(), feelRes.json()])
+                        )
+                    ),
+                    fetch('data/rolesLifepath.json').then(res => res.json())
+                ]);
+
+                allRoles = r;
+                lifepathData.shared = shared;
+                lifepathData.factions = { types: factions[0], feelings: factions[1] };
+                lifepathData.roles = roles;
+
+                const picker = document.getElementById('rolePicker');
+                allRoles.forEach(role => {
+                    const opt = document.createElement('option');
+                    opt.value = role.key;
+                    opt.textContent = role.label;
+                    picker.appendChild(opt);
+                });
+
+                await loadCharacter();
+
+            } catch (err) {
+                showAlert("Failed to initialize builder: " + err.message);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

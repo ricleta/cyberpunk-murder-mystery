@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Sheet</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .sheet-section {
+            border: 1px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: rgba(252, 226, 5, 0.05);
+        }
+        .sheet-section h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .list-item { display: flex; gap: 10px; margin-bottom: 10px; }
+        .list-item input { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Character Sheet: <span id="charNameDisplay">Loading...</span></h1>
+            <a href="#" id="backLink" style="color: var(--primary-color);">Back to Lobby</a>
+        </div>
+        
+        <div id="alertBox" class="alert"></div>
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <button id="saveBtn" style="flex: 1;">SAVE CHANGES</button>
+            <button id="editLifepathBtn" class="secondary-btn" style="flex: 1;">Edit Lifepath</button>
+        </div>
+
+        <div class="character-grid">
+            <div class="sheet-section">
+                <h2>Description</h2>
+                <input type="text" id="displayName" placeholder="Character Name">
+                <p>Role: <strong id="roleDisplay" style="color: var(--secondary-color);">...</strong></p>
+                <textarea id="description" rows="5" placeholder="Character description / backstory..."></textarea>
+            </div>
+
+            <div class="sheet-section">
+                <h2>Traits</h2>
+                <textarea id="traits" rows="4" placeholder="Enter traits, separated by commas..."></textarea>
+            </div>
+        </div>
+
+        <div class="sheet-section">
+            <h2>Secrets & Lies</h2>
+            <div id="secretsList"></div>
+            <button class="secondary-btn" onclick="addArrayItem('secretsList', 'Secret text')">+ Add Secret</button>
+        </div>
+
+        <div class="sheet-section">
+            <h2>Relationships</h2>
+            <div id="relationshipsList"></div>
+            <!-- // TODO: later phase - add relationship editing UI -->
+        </div>
+
+        <div class="sheet-section">
+            <h2>Objectives</h2>
+            <div id="objectivesList"></div>
+            <button class="secondary-btn" onclick="addArrayItem('objectivesList', 'Objective text')">+ Add Objective</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { checkAuth } from './js/auth.js';
+        import { apiFetch } from './js/api.js';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        const charId = urlParams.get('char');
+        let isGm = false;
+
+        document.getElementById('backLink').href = `lobby.html?id=${sessionId}`;
+
+        const alertBox = document.getElementById('alertBox');
+        function showAlert(msg) {
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.style.display='none', 3000);
+        }
+
+        window.addArrayItem = (containerId, placeholder, value = '') => {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `
+                <input type="text" value="${value}" placeholder="${placeholder}" style="flex-grow: 1;">
+                <button class="secondary-btn" onclick="this.parentElement.remove()" style="width: auto;">X</button>
+            `;
+            container.appendChild(div);
+        };
+
+        function getArrayValues(containerId) {
+            const container = document.getElementById(containerId);
+            const inputs = container.querySelectorAll('input');
+            return Array.from(inputs).map(i => i.value).filter(v => v.trim() !== '');
+        }
+
+        async function loadData() {
+            try {
+                // Determine if GM to change back link if needed
+                const session = await apiFetch(`/sessions/${sessionId}`);
+                const user = await checkAuth();
+                isGm = session.gm_id === user.id;
+                if (isGm) {
+                    document.getElementById('backLink').href = `master.html?id=${sessionId}`;
+                }
+
+                const char = await apiFetch(`/sessions/${sessionId}/characters/${charId}`);
+                
+                document.getElementById('charNameDisplay').textContent = char.display_name || 'Unnamed';
+                document.getElementById('displayName').value = char.display_name || '';
+                document.getElementById('roleDisplay').textContent = (char.role_key || 'UNKNOWN').toUpperCase();
+                document.getElementById('description').value = char.description || '';
+                document.getElementById('traits').value = (char.traits || []).join(', ');
+
+                (char.secrets || []).forEach(s => window.addArrayItem('secretsList', 'Secret text', typeof s === 'string' ? s : s.text));
+                (char.objectives || []).forEach(o => window.addArrayItem('objectivesList', 'Objective', typeof o === 'string' ? o : o.text));
+
+                // Load generated relationships
+                try {
+                    const relsData = await apiFetch(`/sessions/${sessionId}/relationships`);
+                    const relContainer = document.getElementById('relationshipsList');
+                    relContainer.innerHTML = '';
+                    
+                    let foundAny = false;
+                    if (relsData.relationships && relsData.relationships.length > 0) {
+                        relsData.relationships.forEach(r => {
+                            let text = '';
+                            if (r.source_character_id === char.id) text = r.description_source;
+                            else if (r.target_character_id === char.id) text = r.description_target;
+                            
+                            if (text) {
+                                foundAny = true;
+                                const p = document.createElement('p');
+                                p.textContent = text;
+                                p.style.padding = '5px 10px';
+                                p.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                                p.style.marginBottom = '5px';
+                                p.style.borderRadius = '3px';
+                                relContainer.appendChild(p);
+                            }
+                        });
+                    }
+                    if (!foundAny) {
+                        relContainer.innerHTML = '<p style="color: #999;">No relationships generated yet.</p>';
+                    }
+                } catch (e) {
+                    console.error("Failed to load relationships:", e);
+                }
+
+            } catch (err) {
+                showAlert(err.message);
+            }
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const traitsArray = document.getElementById('traits').value.split(',').map(t => t.trim()).filter(t => t);
+            
+            const payload = {
+                display_name: document.getElementById('displayName').value,
+                description: document.getElementById('description').value,
+                traits: traitsArray,
+                secrets: getArrayValues('secretsList'),
+                objectives: getArrayValues('objectivesList')
+            };
+
+            try {
+                await apiFetch(`/sessions/${sessionId}/characters/${charId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload)
+                });
+                document.getElementById('charNameDisplay').textContent = payload.display_name || 'Unnamed';
+                showAlert('Saved successfully!');
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+
+        document.getElementById('editLifepathBtn').addEventListener('click', () => {
+            window.location.href = `build.html?session=${sessionId}&char=${charId}`;
+        });
+
+        if (!sessionId || !charId) {
+            window.location.href = 'dashboard.html';
+        } else {
+            loadData();
+        }
+    </script>
+</body>
+</html>

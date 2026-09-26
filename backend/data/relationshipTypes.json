@@ -1,0 +1,64 @@
+{
+  "universal": [
+    {
+      "id": "family",
+      "symmetric": true,
+      "templateSource": "You and #targetName# are family — #flavor#.",
+      "biasTags": []
+    },
+    {
+      "id": "old_friends",
+      "symmetric": true,
+      "templateSource": "You and #targetName# go way back as old friends.",
+      "biasTags": []
+    },
+    {
+      "id": "old_partners",
+      "symmetric": true,
+      "templateSource": "You and #targetName# used to work together as partners.",
+      "biasTags": []
+    },
+    {
+      "id": "mutual_acquaintance",
+      "symmetric": true,
+      "templateSource": "You and #targetName# know each other, but aren't especially close.",
+      "biasTags": []
+    }
+  ],
+  "roleShaped": [
+    {
+      "id": "employer_employee",
+      "symmetric": false,
+      "templateSource": "You've hired #targetName# for work in the past.",
+      "templateTarget": "#sourceName# has hired you for work in the past.",
+      "biasTags": ["hires_labor", "sells_labor", "broker"]
+    },
+    {
+      "id": "rivals",
+      "symmetric": true,
+      "templateSource": "You and #targetName# are professional rivals.",
+      "biasTags": ["public_facing", "criminal", "authority"]
+    },
+    {
+      "id": "corrupt_arrangement",
+      "symmetric": false,
+      "templateSource": "You have #targetName# on your payroll, looking the other way when it counts.",
+      "templateTarget": "#sourceName# pays you to look the other way when it counts.",
+      "biasTags": ["authority", "criminal"]
+    },
+    {
+      "id": "mentor_student",
+      "symmetric": false,
+      "templateSource": "You took #targetName# under your wing early in their career.",
+      "templateTarget": "#sourceName# took you under their wing early in your career.",
+      "biasTags": ["technical", "trusted_confidant"]
+    },
+    {
+      "id": "blackmails",
+      "symmetric": false,
+      "templateSource": "You are quietly blackmailing #targetName#.",
+      "templateTarget": "#sourceName# has something on you and has been squeezing you over it.",
+      "biasTags": ["covert", "criminal"]
+    }
+  ]
+}

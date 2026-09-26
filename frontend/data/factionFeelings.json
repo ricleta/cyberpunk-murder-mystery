@@ -1,0 +1,26 @@
+{
+  "friendFeelings": {
+    "options": [
+      { "id": "loyal_to", "text": "You are fiercely loyal to them" },
+      { "id": "grateful_to", "text": "You owe them a great debt of gratitude" },
+      { "id": "employed_by", "text": "You are employed by them and value the relationship" },
+      { "id": "protected_by", "text": "They have protected you in the past" },
+      { "id": "romantic", "text": "You are romantically involved with a member" },
+      { "id": "family", "text": "They are like family to you" },
+      { "id": "childhood_friends", "text": "You grew up with them" },
+      { "id": "saved_my_life", "text": "They saved your life once" }
+    ]
+  },
+  "enemyFeelings": {
+    "options": [
+      { "id": "hunted_by", "text": "They are actively hunting you" },
+      { "id": "resentful_of", "text": "You resent them for a past wrong" },
+      { "id": "at_war_with", "text": "You are at open war with them" },
+      { "id": "indebted_to", "text": "You owe them money or a favor you don't want to pay" },
+      { "id": "betrayed_by", "text": "They betrayed you" },
+      { "id": "stole_from", "text": "You stole something valuable from them" },
+      { "id": "killed_friend", "text": "They killed someone you loved" },
+      { "id": "former_member", "text": "You left them on very bad terms" }
+    ]
+  }
+}

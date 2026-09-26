@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master View</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        th { background-color: var(--panel-bg); color: var(--primary-color); }
+        .edit-link { color: var(--secondary-color); text-decoration: none; }
+        .edit-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Master Character List</h1>
+            <a href="#" id="backLink" style="color: var(--primary-color);">Back to Lobby</a>
+        </div>
+        
+        <div id="alertBox" class="alert"></div>
+
+        <div class="panel">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Player ID</th>
+                        <th>Character Name</th>
+                        <th>Role</th>
+                        <th>Is Killer</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="charTableBody">
+                    <tr><td colspan="5">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { checkAuth } from './js/auth.js';
+        import { apiFetch } from './js/api.js';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('id');
+        document.getElementById('backLink').href = `lobby.html?id=${sessionId}`;
+
+        const alertBox = document.getElementById('alertBox');
+        function showAlert(msg) {
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+        }
+
+        async function loadData() {
+            try {
+                const data = await apiFetch(`/sessions/${sessionId}/characters`);
+                const chars = data.characters;
+                const tbody = document.getElementById('charTableBody');
+                tbody.innerHTML = '';
+                
+                if (chars.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">No characters created yet.</td></tr>';
+                    return;
+                }
+
+                chars.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-size: 0.8em; color: #888;">${c.player_id.substring(0,8)}...</td>
+                        <td>${c.display_name || '<em>Unnamed</em>'}</td>
+                        <td style="text-transform: uppercase;">${c.role_key}</td>
+                        <td>
+                            <input type="checkbox" onchange="toggleKiller('${c.id}', this.checked)" ${c.is_killer ? 'checked' : ''}>
+                        </td>
+                        <td>
+                            <a href="build.html?session=${sessionId}&char=${c.id}" class="edit-link">Edit Lifepath</a> | 
+                            <a href="character.html?session=${sessionId}&char=${c.id}" class="edit-link">View Sheet</a>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                showAlert(err.message);
+            }
+        }
+
+        window.toggleKiller = async (charId, isKiller) => {
+            try {
+                await apiFetch(`/sessions/${sessionId}/characters/${charId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ is_killer: isKiller })
+                });
+            } catch (err) {
+                showAlert(err.message);
+                loadData(); // revert UI on fail
+            }
+        };
+
+        async function init() {
+            if (!sessionId) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            const user = await checkAuth();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            await loadData();
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "id": "arasaka_soiree_v1",
+  "victim": {
+    "name": "Director Kessler Voss",
+    "roleInWorld": "Arasaka Executive",
+    "causeOfDeath": "Poison",
+    "backgroundBlurb": "Director Kessler Voss was a ruthless corporate climber known for burning bridges and extracting value at any cost. His sudden demise via neuro-toxin in his private estate leaves behind a wake of suspects and motives."
+  },
+  "setting": {
+    "locationName": "The Voss Estate, Westbrook",
+    "eventDescription": "An exclusive gala hosted by Voss to announce a major new cyberware contract. Only the elite and their trusted entourage were invited."
+  }
+}

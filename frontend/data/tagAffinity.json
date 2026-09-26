@@ -1,0 +1,25 @@
+{
+  "defaultWeight": 0.15,
+  "pairs": {
+    "corporate+corporate": 0.6,
+    "corporate+street": 0.2,
+    "corporate+institutional": 0.4,
+    "corporate+outsider": 0.05,
+    "institutional+street": 0.25,
+    "outsider+street": 0.4,
+    "institutional+outsider": 0.1,
+    "authority+criminal": 0.15,
+    "criminal+criminal": 0.5,
+    "technical+technical": 0.45,
+    "trusted_confidant+violent": 0.55,
+    "public_facing+public_facing": 0.5,
+    "authority+authority": 0.3,
+    "covert+covert": 0.4,
+    "hires_labor+sells_labor": 0.6,
+    "broker+hires_labor": 0.55,
+    "broker+sells_labor": 0.6,
+    "hires_labor+self_sufficient": 0.05,
+    "self_sufficient+sells_labor": 0.1,
+    "self_sufficient+self_sufficient": 0.3
+  }
+}

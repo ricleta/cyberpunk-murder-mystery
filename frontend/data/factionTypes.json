@@ -1,0 +1,14 @@
+{
+  "options": [
+    { "id": "corporation", "text": "A corporation" },
+    { "id": "nomad_family", "text": "A nomad family" },
+    { "id": "boostergang", "text": "A boostergang" },
+    { "id": "mercenary_company", "text": "A mercenary company" },
+    { "id": "media_outlet", "text": "A media outlet or data pool" },
+    { "id": "government_agency", "text": "A government agency or law enforcement" },
+    { "id": "religious_cult", "text": "A religious cult or movement" },
+    { "id": "criminal_syndicate", "text": "A criminal syndicate (Mob, Yakuza, Triad)" },
+    { "id": "street_fixer_network", "text": "A street fixer's local network" },
+    { "id": "edgerunner_crew", "text": "An independent edgerunner crew" }
+  ]
+}

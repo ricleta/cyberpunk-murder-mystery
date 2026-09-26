@@ -1,0 +1,12 @@
+{
+  "exec":       { "sphere": ["corporate"], "disposition": ["authority"], "transactional": ["hires_labor"] },
+  "solo":       { "sphere": ["street"], "disposition": ["violent"], "transactional": ["sells_labor"] },
+  "fixer":      { "sphere": ["street"], "disposition": ["criminal", "covert"], "transactional": ["broker", "hires_labor"] },
+  "netrunner":  { "sphere": ["street"], "disposition": ["technical", "criminal", "covert"], "transactional": ["sells_labor"] },
+  "tech":       { "sphere": ["street"], "disposition": ["technical"], "transactional": ["sells_labor"] },
+  "medtech":    { "sphere": ["street"], "disposition": ["technical", "trusted_confidant"], "transactional": ["sells_labor"] },
+  "media":      { "sphere": ["corporate"], "disposition": ["public_facing"], "transactional": ["hires_labor"] },
+  "lawman":     { "sphere": ["institutional"], "disposition": ["authority"], "transactional": ["self_sufficient"] },
+  "nomad":      { "sphere": ["outsider"], "disposition": ["trusted_confidant"], "transactional": ["self_sufficient"] },
+  "rockerboy":  { "sphere": ["street"], "disposition": ["public_facing"], "transactional": ["hires_labor"] }
+}

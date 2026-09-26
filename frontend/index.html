@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Murder Mystery - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" style="max-width: 400px; margin-top: 50px;">
+        <h1>SYSTEM ACCESS</h1>
+        
+        <div id="alertBox" class="alert"></div>
+
+        <div class="panel" id="loginPanel">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="loginEmail" placeholder="Email or Username" required>
+                <input type="password" id="loginPassword" placeholder="Password" required>
+                <button type="submit">Authenticate</button>
+            </form>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                No account? <a href="#" id="showSignup" style="color: var(--secondary-color);">Initialize User</a>
+            </p>
+        </div>
+
+        <div class="panel" id="signupPanel" style="display: none;">
+            <h2>Register</h2>
+            <form id="signupForm">
+                <input type="email" id="signupEmail" placeholder="Email" required>
+                <input type="password" id="signupPassword" placeholder="Password" required>
+                <input type="text" id="signupName" placeholder="Display Name" required>
+                <button type="submit">Register</button>
+            </form>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                Existing user? <a href="#" id="showLogin" style="color: var(--secondary-color);">Return to Login</a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { login, signup, checkAuth } from './js/auth.js';
+
+        // Redirect if already logged in
+        if (localStorage.getItem('token')) {
+            checkAuth().then(user => {
+                if (user) window.location.href = 'dashboard.html';
+            });
+        }
+
+        const loginPanel = document.getElementById('loginPanel');
+        const signupPanel = document.getElementById('signupPanel');
+        const alertBox = document.getElementById('alertBox');
+
+        document.getElementById('showSignup').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginPanel.style.display = 'none';
+            signupPanel.style.display = 'block';
+            alertBox.style.display = 'none';
+        });
+
+        document.getElementById('showLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            signupPanel.style.display = 'none';
+            loginPanel.style.display = 'block';
+            alertBox.style.display = 'none';
+        });
+
+        function showAlert(msg) {
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            try {
+                await login(email, password);
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const name = document.getElementById('signupName').value;
+            try {
+                await signup(email, password, name);
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+    </script>
+</body>
+</html>
