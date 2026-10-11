@@ -1,0 +1,514 @@
+{
+  "rockerboy": {
+    "label": "Rockerboy",
+    "tables": {
+      "rockerboyType": {
+        "label": "What kind of Rockerboy are you?",
+        "options": [
+          { "id": "musician", "text": "Musician" },
+          { "id": "slam_poet", "text": "Slam Poet" },
+          { "id": "street_artist", "text": "Street Artist" },
+          { "id": "performance_artist", "text": "Performance Artist" },
+          { "id": "comedian", "text": "Comedian" },
+          { "id": "orator", "text": "Orator" },
+          { "id": "politico", "text": "Politico" },
+          { "id": "rap_artist", "text": "Rap Artist" },
+          { "id": "dj", "text": "DJ" },
+          { "id": "idoru", "text": "Idoru" }
+        ]
+      },
+      "targetAudience": {
+        "label": "Who is your target audience?",
+        "options": [
+          { "id": "teens", "text": "Teens" },
+          { "id": "corps", "text": "Corps" },
+          { "id": "boostergangs", "text": "Boostergangs" },
+          { "id": "street_scum", "text": "Street Scum" },
+          { "id": "political_rebels", "text": "Political Rebels" },
+          { "id": "old_school_punks", "text": "Old School Punks" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "rival_rocker", "text": "Rival Rockerboy" },
+          { "id": "corp_exec", "text": "Corporate Exec" },
+          { "id": "crazy_fan", "text": "Crazy Fan" },
+          { "id": "gang_leader", "text": "Gang Leader" },
+          { "id": "old_manager", "text": "Old Manager" },
+          { "id": "critic", "text": "Critic/Media" }
+        ]
+      }
+    }
+  },
+  "solo": {
+    "label": "Solo",
+    "tables": {
+      "soloType": {
+        "label": "What kind of Solo are you?",
+        "options": [
+          { "id": "bodyguard", "text": "Bodyguard" },
+          { "id": "street_muscle", "text": "Street Muscle" },
+          { "id": "corporate_merc", "text": "Corporate Merc" },
+          { "id": "hitman", "text": "Hitman" },
+          { "id": "black_ops", "text": "Black Ops" },
+          { "id": "bounty_hunter", "text": "Bounty Hunter" }
+        ]
+      },
+      "moralCompass": {
+        "label": "What's your moral compass like?",
+        "options": [
+          { "id": "always_for_money", "text": "Always for money" },
+          { "id": "never_hurt_innocents", "text": "Never hurt innocents" },
+          { "id": "my_word_is_my_bond", "text": "My word is my bond" },
+          { "id": "always_get_even", "text": "Always get even" },
+          { "id": "help_the_helpless", "text": "Help the helpless" },
+          { "id": "no_rules", "text": "No rules" }
+        ]
+      },
+      "operationalTerritory": {
+        "label": "Who's your operational territory?",
+        "options": [
+          { "id": "corporate_zones", "text": "Corporate Zones" },
+          { "id": "combat_zones", "text": "Combat Zones" },
+          { "id": "the_whole_city", "text": "The whole City" },
+          { "id": "beyond_the_city", "text": "Beyond the City" },
+          { "id": "orbit", "text": "Orbit" },
+          { "id": "the_net", "text": "The Net (Meatspace Security)" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "corp_exec", "text": "A Corporate Exec" },
+          { "id": "gang_leader", "text": "A Gang Leader" },
+          { "id": "former_client", "text": "A former client" },
+          { "id": "rival_solo", "text": "A rival Solo" },
+          { "id": "fixer", "text": "A Fixer" },
+          { "id": "lawman", "text": "A Lawman" }
+        ]
+      }
+    }
+  },
+  "netrunner": {
+    "label": "Netrunner",
+    "tables": {
+      "partnerOrAlone": {
+        "label": "Got a partner, or do you work alone?",
+        "options": [
+          { "id": "partner", "text": "Got a partner" },
+          { "id": "alone", "text": "Work alone" }
+        ]
+      },
+      "runnerType": {
+        "label": "What kind of Runner are you?",
+        "options": [
+          { "id": "freelance", "text": "Freelance" },
+          { "id": "corporate", "text": "Corporate" },
+          { "id": "gang_affiliated", "text": "Gang-affiliated" },
+          { "id": "mercenary", "text": "Mercenary" },
+          { "id": "activist", "text": "Activist/Hacktivist" },
+          { "id": "data_broker", "text": "Data Broker" }
+        ]
+      },
+      "workspace": {
+        "label": "What's your workspace like?",
+        "options": [
+          { "id": "high_end", "text": "High-end corporate rig" },
+          { "id": "cramped_apartment", "text": "Cramped apartment setup" },
+          { "id": "mobile", "text": "Mobile/van rig" },
+          { "id": "hidden_basement", "text": "Hidden basement" },
+          { "id": "cybercafe", "text": "Cybercafe" },
+          { "id": "nomad_camp", "text": "Nomad camp setup" }
+        ]
+      },
+      "otherClients": {
+        "label": "Who are some of your other clients?",
+        "options": [
+          { "id": "local_fixers", "text": "Local Fixers" },
+          { "id": "corps", "text": "Corps" },
+          { "id": "gangs", "text": "Gangs" },
+          { "id": "other_runners", "text": "Other Runners" },
+          { "id": "media", "text": "Media" },
+          { "id": "nomads", "text": "Nomads" }
+        ]
+      },
+      "programsSource": {
+        "label": "Where do you get your programs?",
+        "options": [
+          { "id": "write_them", "text": "Write them yourself" },
+          { "id": "corp_sponsor", "text": "Corporate sponsor" },
+          { "id": "night_market", "text": "Night Market" },
+          { "id": "stolen", "text": "Stolen from others" },
+          { "id": "friend", "text": "A friend" },
+          { "id": "open_source", "text": "Open Source/Net" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "netwatch", "text": "Netwatch" },
+          { "id": "corp_security", "text": "Corporate Security" },
+          { "id": "rival_runner", "text": "Rival Runner" },
+          { "id": "former_client", "text": "Former client" },
+          { "id": "rogue_ai", "text": "Rogue AI" },
+          { "id": "gang", "text": "A gang" }
+        ]
+      }
+    }
+  },
+  "tech": {
+    "label": "Tech",
+    "tables": {
+      "techType": {
+        "label": "What kind of Tech are you?",
+        "options": [
+          { "id": "cybertech", "text": "Cybertech" },
+          { "id": "weaponsmith", "text": "Weaponsmith" },
+          { "id": "mechanic", "text": "Mechanic" },
+          { "id": "electronics_tech", "text": "Electronics Tech" },
+          { "id": "security_tech", "text": "Security Tech" },
+          { "id": "inventor", "text": "Inventor" }
+        ]
+      },
+      "workspace": {
+        "label": "What's your workspace like?",
+        "options": [
+          { "id": "high_end_lab", "text": "High-end corporate lab" },
+          { "id": "garage", "text": "A rented garage" },
+          { "id": "apartment", "text": "Your apartment" },
+          { "id": "nomad_truck", "text": "A Nomad truck" },
+          { "id": "hidden_bunker", "text": "A hidden bunker" },
+          { "id": "street_stall", "text": "A street stall" }
+        ]
+      },
+      "mainClients": {
+        "label": "Who are your main clients?",
+        "options": [
+          { "id": "local_edgerunners", "text": "Local Edgerunners" },
+          { "id": "gangers", "text": "Gangers" },
+          { "id": "corps", "text": "Corps" },
+          { "id": "nomads", "text": "Nomads" },
+          { "id": "locals", "text": "Local neighborhood" },
+          { "id": "lawmen", "text": "Lawmen" }
+        ]
+      },
+      "suppliesSource": {
+        "label": "Where do you get your supplies?",
+        "options": [
+          { "id": "scavenged", "text": "Scavenged from the street" },
+          { "id": "corp_sponsor", "text": "Corporate sponsor" },
+          { "id": "fixers", "text": "Local Fixers" },
+          { "id": "nomad_families", "text": "Nomad families" },
+          { "id": "night_markets", "text": "Night Markets" },
+          { "id": "stolen", "text": "Stolen goods" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "rival_tech", "text": "A rival Tech" },
+          { "id": "dissatisfied_client", "text": "A dissatisfied client" },
+          { "id": "corp_exec", "text": "Corporate Exec you stole from" },
+          { "id": "gang_leader", "text": "A gang leader" },
+          { "id": "lawman", "text": "A Lawman" },
+          { "id": "scavengers", "text": "Scavengers who want your gear" }
+        ]
+      }
+    }
+  },
+  "medtech": {
+    "label": "Medtech",
+    "tables": {
+      "medtechType": {
+        "label": "What kind of Medtech are you?",
+        "options": [
+          { "id": "surgeon", "text": "Surgeon" },
+          { "id": "cyberdoc", "text": "Cyberdoc" },
+          { "id": "pharmacist", "text": "Pharmacist" },
+          { "id": "trauma_medic", "text": "Trauma Medic" },
+          { "id": "therapist", "text": "Therapist" },
+          { "id": "researcher", "text": "Researcher" }
+        ]
+      },
+      "workspace": {
+        "label": "What's your workspace like?",
+        "options": [
+          { "id": "hospital", "text": "A real hospital" },
+          { "id": "ripperdoc_clinic", "text": "A ripperdoc clinic" },
+          { "id": "apartment", "text": "Your apartment" },
+          { "id": "mobile_ambulance", "text": "Mobile ambulance" },
+          { "id": "nomad_tent", "text": "Nomad medical tent" },
+          { "id": "basement", "text": "Hidden basement" }
+        ]
+      },
+      "mainClients": {
+        "label": "Who are your main clients?",
+        "options": [
+          { "id": "edgerunners", "text": "Edgerunners" },
+          { "id": "corps", "text": "Corporate employees" },
+          { "id": "gangers", "text": "Gangers" },
+          { "id": "nomads", "text": "Nomads" },
+          { "id": "trauma_team", "text": "Trauma Team" },
+          { "id": "everyone", "text": "Anyone who can pay" }
+        ]
+      },
+      "suppliesSource": {
+        "label": "Where do you get your supplies?",
+        "options": [
+          { "id": "hospital_theft", "text": "Stolen from a hospital" },
+          { "id": "fixer", "text": "Bought from a Fixer" },
+          { "id": "corps", "text": "Corporate sponsor" },
+          { "id": "scavengers", "text": "Bought from Scavengers" },
+          { "id": "nomads", "text": "Nomad caravans" },
+          { "id": "black_market", "text": "The Black Market" }
+        ]
+      }
+    }
+  },
+  "media": {
+    "label": "Media",
+    "tables": {
+      "mediaType": {
+        "label": "What kind of Media are you?",
+        "options": [
+          { "id": "investigative_reporter", "text": "Investigative Reporter" },
+          { "id": "combat_correspondent", "text": "Combat Correspondent" },
+          { "id": "paparazzo", "text": "Paparazzo" },
+          { "id": "blogger", "text": "Blogger/Screamsheet Author" },
+          { "id": "vlogger", "text": "Vlogger/Streamer" },
+          { "id": "anchor", "text": "News Anchor" }
+        ]
+      },
+      "publication": {
+        "label": "How does your work reach the public?",
+        "options": [
+          { "id": "major_network", "text": "Major Network" },
+          { "id": "screamsheets", "text": "Screamsheets" },
+          { "id": "data_pool", "text": "Data Pool" },
+          { "id": "pirate_broadcast", "text": "Pirate Broadcast" },
+          { "id": "magazine", "text": "Magazine" },
+          { "id": "independent_blog", "text": "Independent Blog" }
+        ]
+      },
+      "ethics": {
+        "label": "How ethical are you?",
+        "options": [
+          { "id": "fair_and_honest", "text": "Fair and honest, always the truth" },
+          { "id": "sensationalist", "text": "Sensationalist, whatever gets views" },
+          { "id": "corp_shill", "text": "Corporate shill, I say what I'm paid to say" },
+          { "id": "activist", "text": "Activist, the truth is a weapon" },
+          { "id": "blackmailer", "text": "Blackmailer, I keep the best secrets for myself" },
+          { "id": "ignorant", "text": "Ignorant, I just report what they tell me" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "corps", "text": "A Corporation you exposed" },
+          { "id": "politician", "text": "A corrupt politician" },
+          { "id": "gang", "text": "A gang whose operations you ruined" },
+          { "id": "celebrity", "text": "A celebrity whose secret you leaked" },
+          { "id": "rival_media", "text": "A rival Media" },
+          { "id": "lawman", "text": "A Lawman who thinks you're a nuisance" }
+        ]
+      }
+    }
+  },
+  "lawman": {
+    "label": "Lawman",
+    "tables": {
+      "lawmanType": {
+        "label": "What kind of Lawman are you?",
+        "options": [
+          { "id": "beat_cop", "text": "Beat Cop" },
+          { "id": "detective", "text": "Detective" },
+          { "id": "swat", "text": "SWAT/MaxTac" },
+          { "id": "corporate_security", "text": "Corporate Security" },
+          { "id": "bounty_hunter", "text": "Bounty Hunter/Private Investigator" },
+          { "id": "undercover", "text": "Undercover Agent" }
+        ]
+      },
+      "jurisdiction": {
+        "label": "What is your jurisdiction?",
+        "options": [
+          { "id": "city_pd", "text": "City PD" },
+          { "id": "corporate_zone", "text": "Corporate Zone" },
+          { "id": "highway_patrol", "text": "Highway Patrol" },
+          { "id": "federal", "text": "Federal/National" },
+          { "id": "private", "text": "Private Security Firm" },
+          { "id": "nomad", "text": "Nomad Nation Enforcer" }
+        ]
+      },
+      "corruption": {
+        "label": "How corrupt is your group?",
+        "options": [
+          { "id": "clean", "text": "Clean as a whistle" },
+          { "id": "some_bad_apples", "text": "Some bad apples, but mostly good" },
+          { "id": "bribes_accepted", "text": "Bribes accepted, but lines drawn" },
+          { "id": "corp_owned", "text": "Owned entirely by a Corporation" },
+          { "id": "gang_owned", "text": "In the pocket of a gang" },
+          { "id": "completely_rotten", "text": "Completely rotten" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "mob_boss", "text": "A Mob Boss you arrested" },
+          { "id": "dirty_cop", "text": "A dirty cop you exposed" },
+          { "id": "boostergang", "text": "A boostergang you crossed" },
+          { "id": "corp_exec", "text": "A Corp Exec whose operation you shut down" },
+          { "id": "serial_killer", "text": "A serial killer you're hunting" },
+          { "id": "former_partner", "text": "A former partner" }
+        ]
+      }
+    }
+  },
+  "exec": {
+    "label": "Exec",
+    "tables": {
+      "corpType": {
+        "label": "What kind of Corporation do you work for?",
+        "options": [
+          { "id": "financial", "text": "Financial" },
+          { "id": "manufacturing", "text": "Manufacturing" },
+          { "id": "agritech", "text": "Agritech" },
+          { "id": "cybernetics", "text": "Cybernetics/Biotech" },
+          { "id": "media", "text": "Media/Communications" },
+          { "id": "security", "text": "Security/Military" }
+        ]
+      },
+      "division": {
+        "label": "What division do you work in?",
+        "options": [
+          { "id": "procurement", "text": "Procurement" },
+          { "id": "sales", "text": "Sales/Marketing" },
+          { "id": "r_and_d", "text": "R&D" },
+          { "id": "hr", "text": "Human Resources" },
+          { "id": "security", "text": "Security/Intelligence" },
+          { "id": "management", "text": "Executive Management" }
+        ]
+      },
+      "boss": {
+        "label": "Who is your boss?",
+        "options": [
+          { "id": "mentor", "text": "A helpful mentor" },
+          { "id": "tyrant", "text": "A demanding tyrant" },
+          { "id": "incompetent", "text": "An incompetent fool you cover for" },
+          { "id": "paranoid", "text": "A paranoid micromanager" },
+          { "id": "schemer", "text": "A dangerous schemer" },
+          { "id": "absent", "text": "An absent figurehead" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "rival_exec", "text": "A rival Exec in your Corp" },
+          { "id": "rival_corp", "text": "An Exec at a rival Corp" },
+          { "id": "former_employee", "text": "A former employee you fired" },
+          { "id": "media", "text": "A Media exposing your secrets" },
+          { "id": "edgerunner", "text": "An Edgerunner you betrayed" },
+          { "id": "gang", "text": "A gang your Corp displaced" }
+        ]
+      }
+    }
+  },
+  "fixer": {
+    "label": "Fixer",
+    "tables": {
+      "fixerType": {
+        "label": "What kind of Fixer are you?",
+        "options": [
+          { "id": "broker", "text": "Broker/Dealmaker" },
+          { "id": "smuggler", "text": "Smuggler" },
+          { "id": "info_broker", "text": "Information Broker" },
+          { "id": "pimp", "text": "Pimp/Flesh Peddler" },
+          { "id": "black_market", "text": "Black Market Fence" },
+          { "id": "talent_agent", "text": "Talent Agent" }
+        ]
+      },
+      "office": {
+        "label": "Where is your 'office'?",
+        "options": [
+          { "id": "bar", "text": "A booth in a local bar" },
+          { "id": "club", "text": "A VIP room in a club" },
+          { "id": "street_corner", "text": "A street corner" },
+          { "id": "high_end_office", "text": "A high-end corporate office" },
+          { "id": "nomad_truck", "text": "The back of a Nomad truck" },
+          { "id": "virtual", "text": "A virtual space on the Net" }
+        ]
+      },
+      "mainClients": {
+        "label": "Who are your main clients?",
+        "options": [
+          { "id": "edgerunners", "text": "Edgerunners" },
+          { "id": "corps", "text": "Corporate Execs" },
+          { "id": "gangs", "text": "Gangs" },
+          { "id": "nomads", "text": "Nomads" },
+          { "id": "media", "text": "Media" },
+          { "id": "politicians", "text": "Politicians" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "rival_fixer", "text": "A rival Fixer" },
+          { "id": "lawman", "text": "A Lawman trying to bust your operation" },
+          { "id": "corp", "text": "A Corp you stole from" },
+          { "id": "gang", "text": "A gang you double-crossed" },
+          { "id": "client", "text": "A client whose deal went bad" },
+          { "id": "solo", "text": "A Solo you hired who wasn't paid" }
+        ]
+      }
+    }
+  },
+  "nomad": {
+    "label": "Nomad",
+    "tables": {
+      "packSize": {
+        "label": "How big is your Pack?",
+        "options": [
+          { "id": "small", "text": "A single family (dozens)" },
+          { "id": "medium", "text": "A small tribe (hundreds)" },
+          { "id": "large", "text": "A large tribe (thousands)" },
+          { "id": "huge", "text": "A Nomad Nation (tens of thousands)" },
+          { "id": "splinter", "text": "A splinter group (a few vehicles)" },
+          { "id": "outcasts", "text": "A group of outcasts" }
+        ]
+      },
+      "landBased": {
+        "label": "Is your Pack land, sea, or air based?",
+        "options": [
+          { "id": "land", "text": "Land-based (cars, trucks, bikes)" },
+          { "id": "sea", "text": "Sea-based (boats, subs)" },
+          { "id": "air", "text": "Air-based (aerodynes, blimps)" },
+          { "id": "space", "text": "Space-based (orbitals)" },
+          { "id": "mixed", "text": "Mixed (land and air)" },
+          { "id": "stationary", "text": "Stationary (a reclaimed town)" }
+        ]
+      },
+      "packRole": {
+        "label": "What do you do for your Pack?",
+        "options": [
+          { "id": "scout", "text": "Scout/Outrider" },
+          { "id": "driver", "text": "Driver/Pilot" },
+          { "id": "mechanic", "text": "Mechanic" },
+          { "id": "trader", "text": "Trader/Negotiator" },
+          { "id": "warrior", "text": "Warrior/Protector" },
+          { "id": "leader", "text": "Leader/Elder" }
+        ]
+      },
+      "whoIsGunningForYou": {
+        "label": "Who's gunning for you?",
+        "options": [
+          { "id": "rival_pack", "text": "A rival Nomad Pack" },
+          { "id": "corp", "text": "A Corp protecting their shipments" },
+          { "id": "lawmen", "text": "Lawmen hunting you down" },
+          { "id": "wraiths", "text": "Raffen Shiv (outcast Nomads)" },
+          { "id": "gangers", "text": "City Gangers" },
+          { "id": "reclaimers", "text": "Reclaimers contesting your territory" }
+        ]
+      }
+    }
+  }
+}

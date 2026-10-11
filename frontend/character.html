@@ -47,7 +47,6 @@
         <div class="sheet-section">
             <h2>Secrets & Lies</h2>
             <div id="secretsList"></div>
-            <button class="secondary-btn" onclick="addArrayItem('secretsList', 'Secret text')">+ Add Secret</button>
         </div>
 
         <div class="sheet-section">
@@ -116,7 +115,21 @@
                 document.getElementById('description').value = char.description || '';
                 document.getElementById('traits').value = (char.traits || []).join(', ');
 
-                (char.secrets || []).forEach(s => window.addArrayItem('secretsList', 'Secret text', typeof s === 'string' ? s : s.text));
+                const secContainer = document.getElementById('secretsList');
+                secContainer.innerHTML = '';
+                const secrets = char.secrets || [];
+                if (secrets.length === 0) {
+                    secContainer.innerHTML = '<p style="color: #999;">No secrets generated yet.</p>';
+                }
+                secrets.forEach(s => {
+                    const p = document.createElement('p');
+                    p.textContent = (s.about_self ? '🔒 ' : '👁 ') + s.text;
+                    p.style.padding = '5px 10px';
+                    p.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    p.style.marginBottom = '5px';
+                    p.style.borderRadius = '3px';
+                    secContainer.appendChild(p);
+                });
                 (char.objectives || []).forEach(o => window.addArrayItem('objectivesList', 'Objective', typeof o === 'string' ? o : o.text));
 
                 // Load generated relationships
@@ -163,7 +176,6 @@
                 display_name: document.getElementById('displayName').value,
                 description: document.getElementById('description').value,
                 traits: traitsArray,
-                secrets: getArrayValues('secretsList'),
                 objectives: getArrayValues('objectivesList')
             };
 

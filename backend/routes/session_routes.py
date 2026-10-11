@@ -2,8 +2,29 @@ from flask import Blueprint, request, jsonify, g
 import random
 import string
 from extensions import db
-from models import Session, SessionMember, User
+from models import Session, SessionMember, User, Character, Relationship, Secret, SecretKnowledge
 from auth import require_auth, is_session_gm
+
+def _delete_characters(char_ids):
+    """Delete characters plus every row that references them (FK-safe order)."""
+    if not char_ids:
+        return
+    secret_ids = [s.id for s in Secret.query.filter(
+        (Secret.subject_character_id.in_(char_ids)) | (Secret.related_character_id.in_(char_ids))).all()]
+    rel_ids = [r.id for r in Relationship.query.filter(
+        (Relationship.source_character_id.in_(char_ids)) | (Relationship.target_character_id.in_(char_ids))).all()]
+    # Secrets tied to relationships being removed must go too
+    if rel_ids:
+        secret_ids += [s.id for s in Secret.query.filter(Secret.related_relationship_id.in_(rel_ids)).all()]
+    secret_ids = list(set(secret_ids))
+    if secret_ids:
+        SecretKnowledge.query.filter(SecretKnowledge.secret_id.in_(secret_ids)).delete(synchronize_session=False)
+    SecretKnowledge.query.filter(SecretKnowledge.knower_character_id.in_(char_ids)).delete(synchronize_session=False)
+    if secret_ids:
+        Secret.query.filter(Secret.id.in_(secret_ids)).delete(synchronize_session=False)
+    if rel_ids:
+        Relationship.query.filter(Relationship.id.in_(rel_ids)).delete(synchronize_session=False)
+    Character.query.filter(Character.id.in_(char_ids)).delete(synchronize_session=False)
 
 bp = Blueprint('sessions', __name__)
 
@@ -131,7 +152,7 @@ def get_session_members(session_id):
     for sm, u in members:
         result.append({
             'user_id': u.id,
-            'display_name': u.display_name,
+            'display_name': u.username,
             'joined_at': sm.joined_at.isoformat()
         })
 
@@ -156,10 +177,29 @@ def remove_member(session_id, user_id):
     if not member:
         return jsonify({'error': 'Member not found in session'}), 404
 
+    chars = Character.query.filter_by(session_id=session_id, player_id=user_id).all()
+    _delete_characters([c.id for c in chars])
     db.session.delete(member)
     db.session.commit()
 
     return jsonify({'message': 'Member removed successfully'}), 200
+
+@bp.route('/<session_id>', methods=['DELETE'])
+@require_auth
+def delete_session(session_id):
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    if session.gm_id != g.current_user_id:
+        return jsonify({'error': 'Only the GM can delete the session'}), 403
+
+    _delete_characters([c.id for c in Character.query.filter_by(session_id=session_id).all()])
+    Secret.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    Relationship.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    SessionMember.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+    db.session.delete(session)
+    db.session.commit()
+    return jsonify({'message': 'Session deleted'}), 200
 
 @bp.route('/<session_id>/lifepath-status', methods=['GET'])
 @require_auth
@@ -189,7 +229,7 @@ def get_lifepath_status(session_id):
             is_complete = char.lifepath_complete
             result_members.append({
                 'character_id': char.id,
-                'player_display_name': u.display_name,
+                'player_display_name': u.username,
                 'role_key': char.role_key,
                 'lifepath_complete': is_complete
             })
@@ -202,7 +242,7 @@ def get_lifepath_status(session_id):
             if u.id != session.gm_id:
                 result_members.append({
                     'character_id': None,
-                    'player_display_name': u.display_name,
+                    'player_display_name': u.username,
                     'role_key': None,
                     'lifepath_complete': False
                 })
@@ -226,6 +266,13 @@ def generate_relationships(session_id):
     from generation.relationships import _generate_relationships
     
     try:
+        # Secrets reference relationships and are derived from them, so regenerating
+        # relationships invalidates any existing secrets. Clear them first (FK-safe order).
+        old_secret_ids = [s.id for s in Secret.query.filter_by(session_id=session_id).all()]
+        if old_secret_ids:
+            SecretKnowledge.query.filter(SecretKnowledge.secret_id.in_(old_secret_ids)).delete(synchronize_session=False)
+            Secret.query.filter_by(session_id=session_id).delete(synchronize_session=False)
+            db.session.commit()
         rels = _generate_relationships(session)
         result = []
         for r in rels:
@@ -281,3 +328,106 @@ def get_relationships(session_id):
 
     return jsonify({'relationships': result}), 200
 
+@bp.route('/<session_id>/generate-secrets', methods=['POST'])
+@require_auth
+def generate_secrets(session_id):
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    if not is_session_gm(g.current_user_id, session):
+        return jsonify({'error': 'Only GM can generate secrets'}), 403
+
+    from generation.secrets import _generate_secrets, verify_secrets
+    from models import Secret
+
+    existing = Secret.query.filter_by(session_id=session_id).first()
+    if existing:
+        return jsonify({'error': 'Secrets already exist for this session'}), 409
+
+    try:
+        _generate_secrets(session)
+        verify_secrets(session)
+        return jsonify({'message': 'Secrets generated successfully'}), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        import traceback
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
+
+@bp.route('/<session_id>/secrets', methods=['GET'])
+@require_auth
+def get_secrets(session_id):
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    from models import Secret, SecretKnowledge, Character
+    
+    is_gm = is_session_gm(g.current_user_id, session)
+    my_char = Character.query.filter_by(session_id=session_id, player_id=g.current_user_id).first()
+
+    secrets = Secret.query.filter_by(session_id=session_id).all()
+    knowledge = SecretKnowledge.query.join(Secret).filter(Secret.session_id == session_id).all()
+
+    characters = Character.query.filter_by(session_id=session_id).all()
+    char_map = {c.id: c.display_name for c in characters}
+
+    result = []
+    
+    for s in secrets:
+        # GM sees everything
+        if is_gm:
+            sk_list = [k for k in knowledge if k.secret_id == s.id]
+            result.append({
+                'id': s.id,
+                'subject_character_id': s.subject_character_id,
+                'subject_name': char_map.get(s.subject_character_id),
+                'kind': s.kind,
+                'category': s.category,
+                'severity': s.severity,
+                'is_killer_core': s.is_killer_core,
+                'is_killer_trail': s.is_killer_trail,
+                'text_subject': s.text_subject,
+                'text_knower': s.text_knower,
+                'knowers': [{'knower_character_id': k.knower_character_id, 'knower_name': char_map.get(k.knower_character_id)} for k in sk_list]
+            })
+            continue
+            
+        # For players
+        if not my_char:
+            continue
+            
+        # Is this my secret?
+        if s.subject_character_id == my_char.id:
+            result.append({
+                'id': s.id,
+                'subject_character_id': s.subject_character_id,
+                'subject_name': char_map.get(s.subject_character_id),
+                'kind': s.kind,
+                'category': s.category,
+                'severity': s.severity,
+                'is_killer_core': s.is_killer_core,
+                'is_killer_trail': s.is_killer_trail,
+                'text_subject': s.text_subject
+                # Not returning knowers or text_knower to the subject
+            })
+            continue
+            
+        # Do I know this secret?
+        my_knowledge = [k for k in knowledge if k.secret_id == s.id and k.knower_character_id == my_char.id]
+        if my_knowledge:
+            result.append({
+                'id': s.id,
+                'subject_character_id': s.subject_character_id,
+                'subject_name': char_map.get(s.subject_character_id),
+                'kind': s.kind,
+                'category': s.category,
+                'severity': s.severity,
+                'text_knower': s.text_knower
+                # Not returning is_killer_core/trail, text_subject, or other knowers
+            })
+
+    return jsonify({'secrets': result}), 200

@@ -12,18 +12,17 @@ bp = Blueprint('auth', __name__)
 @bp.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    email = data.get('email')
+    username = data.get('username')
     password = data.get('password')
-    display_name = data.get('display_name')
 
-    if not email or not password or not display_name:
+    if not username or not password:
         return jsonify({'error': 'Missing required fields'}), 400
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'Email already registered'}), 409
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already registered'}), 409
 
     hashed_password = generate_password_hash(password)
-    new_user = User(email=email, password_hash=hashed_password, display_name=display_name)
+    new_user = User(username=username, password_hash=hashed_password)
     
     db.session.add(new_user)
     db.session.commit()
@@ -37,21 +36,20 @@ def signup():
         'token': token,
         'user': {
             'id': new_user.id,
-            'email': new_user.email,
-            'display_name': new_user.display_name
+            'username': new_user.username
         }
     }), 201
 
 @bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    identifier = data.get('email')
+    identifier = data.get('username')
     password = data.get('password')
 
     if not identifier or not password:
-        return jsonify({'error': 'Missing email/username or password'}), 400
+        return jsonify({'error': 'Missing username or password'}), 400
 
-    user = User.query.filter((User.email == identifier) | (User.display_name == identifier)).first()
+    user = User.query.filter_by(username=identifier).first()
 
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'error': 'Invalid credentials'}), 401
@@ -65,8 +63,7 @@ def login():
         'token': token,
         'user': {
             'id': user.id,
-            'email': user.email,
-            'display_name': user.display_name
+            'username': user.username
         }
     }), 200
 
@@ -80,7 +77,6 @@ def get_me():
     return jsonify({
         'user': {
             'id': user.id,
-            'email': user.email,
-            'display_name': user.display_name
+            'username': user.username
         }
     }), 200

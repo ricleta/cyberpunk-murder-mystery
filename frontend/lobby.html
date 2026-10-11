@@ -29,7 +29,8 @@
             <h2>Your Status</h2>
             <p id="playerStatus">Waiting for GM to assign a role...</p>
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button id="viewSheetBtn" style="display: none; flex: 1;">View/Edit Character Sheet</button>
+                <button id="viewSheetBtn" style="display: none; flex: 1;">View Character Sheet</button>
+                <button id="lifepathBtn" style="display: none; flex: 1;">Lifepath Choices</button>
             </div>
         </div>
 
@@ -45,7 +46,7 @@
             <p id="allReadyStatus">Loading status...</p>
             <ul id="readinessList" style="list-style: none; padding: 0;">
             </ul>
-            <button id="generateRelationshipsBtn" disabled style="margin-top: 15px; width: 100%;">Generate Relationships</button>
+            <button id="generateRelationshipsBtn" disabled style="margin-top: 15px; width: 100%;">Generate Relationships & Secrets</button>
         </div>
     </div>
 
@@ -103,18 +104,24 @@
                             const sheetBtn = document.getElementById('viewSheetBtn');
                             sheetBtn.style.display = 'block';
                             sheetBtn.onclick = () => window.location.href = `character.html?session=${sessionId}&char=${myChar.id}`;
+                            const lpBtn = document.getElementById('lifepathBtn');
+                            lpBtn.style.display = 'block';
+                            lpBtn.onclick = () => window.location.href = `build.html?session=${sessionId}&char=${myChar.id}`;
                         }
                     } catch (e) {
                         // Not assigned yet
-                        document.getElementById('playerStatus').innerHTML = `
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <select id="myRoleSelect" style="margin: 0; width: auto;">
-                                    <option value="">Select your role...</option>
-                                    ${roles.map(r => `<option value="${r.key}">${r.label}</option>`).join('')}
-                                </select>
-                                <button onclick="assignRole()" style="margin: 0; padding: 5px 10px;">Pick Role</button>
-                            </div>
-                        `;
+                        if (!document.getElementById('myRoleSelect')) {
+                            document.getElementById('playerStatus').innerHTML = `
+                                <div style="display: flex; gap: 10px; margin-top: 10px; flex-direction: column;">
+                                    <input type="text" id="myCharName" placeholder="Character Name" oninput="checkFormReadiness()" style="margin: 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff;">
+                                    <select id="myRoleSelect" onchange="checkFormReadiness()" style="margin: 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff;">
+                                        <option value="">Select your role...</option>
+                                        ${roles.map(r => `<option value="${r.key}">${r.label}</option>`).join('')}
+                                    </select>
+                                    <button id="createCharBtn" onclick="assignRole()" style="margin: 0; padding: 10px;" disabled>Create Character</button>
+                                </div>
+                            `;
+                        }
                     }
                 }
 
@@ -188,16 +195,37 @@
             }
         }
 
+        window.checkFormReadiness = () => {
+            const nameInput = document.getElementById('myCharName');
+            const sel = document.getElementById('myRoleSelect');
+            const btn = document.getElementById('createCharBtn');
+            if (nameInput && sel && btn) {
+                btn.disabled = !(nameInput.value.trim() !== '' && sel.value !== '');
+            }
+        };
+
         window.assignRole = async () => {
             const sel = document.getElementById('myRoleSelect');
+            const nameInput = document.getElementById('myCharName');
             const roleKey = sel.value;
-            if (!roleKey) return;
+            const charName = nameInput ? nameInput.value.trim() : '';
+
+            if (!charName) {
+                showAlert("Please enter a character name.");
+                return;
+            }
+            if (!roleKey) {
+                showAlert("Please select a role.");
+                return;
+            }
+            
             try {
                 await apiFetch(`/sessions/${sessionId}/characters`, {
                     method: 'POST',
-                    body: JSON.stringify({ role_key: roleKey })
+                    body: JSON.stringify({ role_key: roleKey, display_name: charName })
                 });
-                await loadData(); // refresh
+                const created = await apiFetch(`/sessions/${sessionId}/characters/mine`);
+                window.location.href = `build.html?session=${sessionId}&char=${created.id}`;
             } catch (err) {
                 showAlert(err.message);
             }
@@ -210,14 +238,15 @@
             btn.textContent = 'Generating...';
             try {
                 const res = await apiFetch(`/sessions/${sessionId}/generate-relationships`, { method: 'POST' });
-                showAlert(`Relationships generated — ${res.relationships.length} connections created!`);
-                btn.textContent = 'Regenerate Relationships';
+                btn.textContent = 'Generating secrets...';
+                await apiFetch(`/sessions/${sessionId}/generate-secrets`, { method: 'POST' });
+                showAlert(`Relationships and secrets generated — ${res.relationships.length} connections created!`);
+                btn.textContent = 'Regenerate Relationships & Secrets';
                 btn.disabled = false;
-                // TODO Phase 4: Trigger next generation step
             } catch (err) {
                 showAlert(err.message);
                 btn.disabled = false;
-                btn.textContent = 'Generate Relationships';
+                btn.textContent = 'Generate Relationships & Secrets';
             }
         };
 

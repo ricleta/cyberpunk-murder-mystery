@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, g
 from extensions import db
-from models import Session, Character, User
+from models import Session, Character, User, Secret, SecretKnowledge
 from auth import require_auth, is_session_gm, can_view_character, can_edit_character
 import json
 import os
@@ -8,13 +8,13 @@ import os
 def load_lifepath_data():
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'data'))
     try:
-        with open(os.path.join(base_dir, 'lifepathShared.json'), 'r') as f:
+        with open(os.path.join(base_dir, 'lifepathShared.json'), 'r', encoding='utf-8') as f:
             shared = json.load(f)
-        with open(os.path.join(base_dir, 'factionTypes.json'), 'r') as f:
+        with open(os.path.join(base_dir, 'factionTypes.json'), 'r', encoding='utf-8') as f:
             faction_types = json.load(f)
-        with open(os.path.join(base_dir, 'factionFeelings.json'), 'r') as f:
+        with open(os.path.join(base_dir, 'factionFeelings.json'), 'r', encoding='utf-8') as f:
             faction_feelings = json.load(f)
-        with open(os.path.join(base_dir, 'rolesLifepath.json'), 'r') as f:
+        with open(os.path.join(base_dir, 'rolesLifepath.json'), 'r', encoding='utf-8') as f:
             roles = json.load(f)
         return shared, faction_types, faction_feelings, roles
     except Exception as e:
@@ -52,6 +52,23 @@ def check_lifepath_complete(character, shared, roles_data):
             
     return True
 
+def get_character_secrets(character):
+    """Secrets now live in the Secret/SecretKnowledge tables (Phase 4), not on Character.
+    Returns the secrets this character holds: ones about themselves (text_subject)
+    plus ones they know about others (text_knower)."""
+    result = []
+    for s in Secret.query.filter_by(subject_character_id=character.id).all():
+        result.append({'id': s.id, 'kind': s.kind, 'text': s.text_subject, 'about_self': True})
+    known = db.session.query(Secret, SecretKnowledge).join(
+        SecretKnowledge, SecretKnowledge.secret_id == Secret.id
+    ).filter(SecretKnowledge.knower_character_id == character.id).all()
+    for s, k in known:
+        if s.subject_character_id == character.id:
+            continue
+        result.append({'id': s.id, 'kind': s.kind, 'text': s.text_knower or s.text_subject,
+                       'about_self': False, 'how_learned': k.how_learned})
+    return result
+
 bp = Blueprint('characters', __name__)
 
 @bp.route('/<session_id>/characters', methods=['POST'])
@@ -70,9 +87,10 @@ def create_character(session_id):
     data = request.get_json() or {}
     player_id = g.current_user_id  # Players create their own characters
     role_key = data.get('role_key')
+    display_name = data.get('display_name')
 
-    if not role_key:
-        return jsonify({'error': 'role_key is required'}), 400
+    if not role_key or not display_name:
+        return jsonify({'error': 'role_key and display_name are required'}), 400
 
     # Check if character already exists for this player in this session
     existing_char = Character.query.filter_by(session_id=session_id, player_id=player_id).first()
@@ -82,7 +100,8 @@ def create_character(session_id):
     new_char = Character(
         session_id=session_id,
         player_id=player_id,
-        role_key=role_key
+        role_key=role_key,
+        display_name=display_name
     )
     db.session.add(new_char)
     db.session.commit()
@@ -90,7 +109,8 @@ def create_character(session_id):
     return jsonify({
         'id': new_char.id,
         'player_id': new_char.player_id,
-        'role_key': new_char.role_key
+        'role_key': new_char.role_key,
+        'display_name': new_char.display_name
     }), 201
 
 @bp.route('/<session_id>/characters', methods=['GET'])
@@ -130,7 +150,7 @@ def get_my_character(session_id):
         'display_name': character.display_name,
         'description': character.description,
         'traits': character.traits,
-        'secrets': character.secrets,
+        'secrets': get_character_secrets(character),
         'objectives': character.objectives,
         'is_killer': character.is_killer,
         'cultural_origin': character.cultural_origin,
@@ -173,7 +193,7 @@ def get_character(session_id, character_id):
         'display_name': character.display_name,
         'description': character.description,
         'traits': character.traits,
-        'secrets': character.secrets,
+        'secrets': get_character_secrets(character),
         'objectives': character.objectives,
         'is_killer': character.is_killer,
         'cultural_origin': character.cultural_origin,
@@ -218,8 +238,7 @@ def update_character(session_id, character_id):
         character.description = data['description']
     if 'traits' in data:
         character.traits = data['traits']
-    if 'secrets' in data:
-        character.secrets = data['secrets']
+    # 'secrets' is no longer a Character column; secrets are generated in Phase 4.
     if 'objectives' in data:
         character.objectives = data['objectives']
         
@@ -319,7 +338,8 @@ def delete_character(session_id, character_id):
     if not character or character.session_id != session_id:
         return jsonify({'error': 'Character not found'}), 404
 
-    db.session.delete(character)
+    from routes.session_routes import _delete_characters
+    _delete_characters([character.id])
     db.session.commit()
 
     return jsonify({'message': 'Character deleted successfully'}), 200

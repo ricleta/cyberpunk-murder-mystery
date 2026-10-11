@@ -51,6 +51,7 @@
             alertBox.textContent = msg;
             alertBox.style.display = 'block';
         }
+        let currentUserId = null;
 
         async function init() {
             const user = await checkAuth();
@@ -58,6 +59,7 @@
                 window.location.href = 'index.html';
                 return;
             }
+            currentUserId = user.id;
 
             document.getElementById('logoutBtn').addEventListener('click', logout);
 
@@ -121,8 +123,28 @@
                             <strong style="font-size: 1.2rem; display: block;">${s.name}</strong>
                             <span style="font-size: 0.9rem; color: #888;">Code: ${s.join_code} | Status: ${s.status}</span>
                         </div>
-                        <span style="color: var(--primary-color); font-weight: bold;">${s.is_gm ? 'GM' : 'Player'}</span>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="color: var(--primary-color); font-weight: bold;">${s.is_gm ? 'GM' : 'Player'}</span>
+                            <button class="secondary-btn session-action-btn" style="width: auto; margin: 0; padding: 6px 12px;">${s.is_gm ? 'Delete' : 'Leave'}</button>
+                        </div>
                     `;
+                    li.querySelector('.session-action-btn').onclick = async (e) => {
+                        e.stopPropagation();
+                        const msg = s.is_gm
+                            ? `Delete "${s.name}" and all its characters? This cannot be undone.`
+                            : `Leave "${s.name}"? Your character will be deleted.`;
+                        if (!confirm(msg)) return;
+                        try {
+                            if (s.is_gm) {
+                                await apiFetch(`/sessions/${s.id}`, { method: 'DELETE' });
+                            } else {
+                                await apiFetch(`/sessions/${s.id}/members/${currentUserId}`, { method: 'DELETE' });
+                            }
+                            await loadMySessions();
+                        } catch (err) {
+                            showAlert(err.message);
+                        }
+                    };
                     list.appendChild(li);
                 });
             } catch (err) {

@@ -1,8 +1,8 @@
 import pytest
-from backend.app import create_app
-from backend.extensions import db
-from backend.models import User, Session, SessionMember, Character
-from backend.config import Config
+from app import create_app
+from extensions import db
+from models import User, Session, SessionMember, Character
+from config import Config
 import jwt
 from datetime import datetime, timedelta
 
@@ -36,9 +36,9 @@ def generate_token():
 def setup_data(app):
     with app.app_context():
         # Create users
-        gm_user = User(email="gm@test.com", password_hash="hash", display_name="GM")
-        player1 = User(email="p1@test.com", password_hash="hash", display_name="Player 1")
-        player2 = User(email="p2@test.com", password_hash="hash", display_name="Player 2")
+        gm_user = User(username="GM", password_hash="hash")
+        player1 = User(username="Player 1", password_hash="hash")
+        player2 = User(username="Player 2", password_hash="hash")
         db.session.add_all([gm_user, player1, player2])
         db.session.commit()
 

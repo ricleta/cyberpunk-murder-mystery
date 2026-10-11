@@ -7,9 +7,8 @@ def generate_uuid():
 
 class User(db.Model):
     id = db.Column(db.String, primary_key=True, default=generate_uuid)
-    email = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
     password_hash = db.Column(db.String, nullable=False)
-    display_name = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Session(db.Model):
@@ -39,7 +38,6 @@ class Character(db.Model):
     display_name = db.Column(db.String, nullable=True)
     description = db.Column(db.Text, default='')
     traits = db.Column(db.JSON, default=list)
-    secrets = db.Column(db.JSON, default=list)
     objectives = db.Column(db.JSON, default=list)
     
     # Shared Lifepath fields
@@ -92,4 +90,36 @@ class Relationship(db.Model):
         db.UniqueConstraint('source_character_id', 'target_character_id', name='one_relationship_per_pair'),
         db.Index('idx_relationship_source', 'source_character_id'),
         db.Index('idx_relationship_target', 'target_character_id')
+    )
+
+class Secret(db.Model):
+    id = db.Column(db.String, primary_key=True, default=generate_uuid)
+    session_id = db.Column(db.String, db.ForeignKey('session.id'), nullable=False)
+    subject_character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=False)
+    kind = db.Column(db.String, nullable=False)  # 'victim_tie' | 'self' | 'lie' | 'observation'
+    category = db.Column(db.String, nullable=False)  # free-form
+    severity = db.Column(db.Integer, nullable=False)  # 1-3
+    is_public = db.Column(db.Boolean, default=False)  # plumbing only
+    related_character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=True)
+    related_relationship_id = db.Column(db.String, db.ForeignKey('relationship.id'), nullable=True)
+    is_killer_core = db.Column(db.Boolean, default=False)
+    is_killer_trail = db.Column(db.Boolean, default=False)
+    text_subject = db.Column(db.Text, nullable=False)
+    text_knower = db.Column(db.Text, nullable=True)  # null only when is_public
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.CheckConstraint("kind IN ('victim_tie', 'self', 'lie', 'observation')", name='valid_secret_kind'),
+    )
+
+class SecretKnowledge(db.Model):
+    id = db.Column(db.String, primary_key=True, default=generate_uuid)
+    secret_id = db.Column(db.String, db.ForeignKey('secret.id'), nullable=False)
+    knower_character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=False)
+    how_learned = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('secret_id', 'knower_character_id', name='unique_secret_knowledge'),
     )

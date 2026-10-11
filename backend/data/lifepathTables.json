@@ -1,0 +1,42 @@
+{
+  "culturalOrigin": [
+    { "id": "na", "text": "North American" },
+    { "id": "sa", "text": "South American" },
+    { "id": "we", "text": "Western European" },
+    { "id": "ee", "text": "Eastern European" },
+    { "id": "af", "text": "African" },
+    { "id": "se", "text": "Southeast Asian" },
+    { "id": "ea", "text": "East Asian" },
+    { "id": "pa", "text": "Pacific Islander" }
+  ],
+  "personality": [
+    { "id": "shy", "text": "Shy and secretive" },
+    { "id": "rebel", "text": "Rebellious and antisocial" },
+    { "id": "arrogant", "text": "Arrogant and proud" },
+    { "id": "friendly", "text": "Friendly and outgoing" },
+    { "id": "sneaky", "text": "Sneaky and deceptive" },
+    { "id": "moody", "text": "Moody and rash" },
+    { "id": "stable", "text": "Stable and serious" },
+    { "id": "intellectual", "text": "Intellectual and detached" }
+  ],
+  "clothingStyle": [
+    { "id": "biker", "text": "Biker leathers" },
+    { "id": "corp", "text": "Corporate suits" },
+    { "id": "urban", "text": "Urban flash" },
+    { "id": "nomad", "text": "Nomad road gear" },
+    { "id": "bagbag", "text": "Bag lady chic" },
+    { "id": "mil", "text": "Military surplus" },
+    { "id": "goth", "text": "Goth makeup and black" },
+    { "id": "ath", "text": "Athletic wear" }
+  ],
+  "lifeEvent": [
+    { "id": "debt", "text": "Made a huge debt" },
+    { "id": "enemy", "text": "Made a powerful enemy" },
+    { "id": "lover", "text": "Lost a lover" },
+    { "id": "jail", "text": "Spent time in jail" },
+    { "id": "windfall", "text": "Gained a massive windfall" },
+    { "id": "gang", "text": "Joined a gang" },
+    { "id": "betray", "text": "Betrayed a close friend" },
+    { "id": "save", "text": "Saved someone's life" }
+  ]
+}

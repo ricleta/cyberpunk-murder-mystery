@@ -1,19 +1,19 @@
 import { apiFetch } from './api.js';
 
-export async function login(email, password) {
+export async function login(username, password) {
     const data = await apiFetch('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, password })
     });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     return data;
 }
 
-export async function signup(email, password, display_name) {
+export async function signup(username, password) {
     const data = await apiFetch('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ email, password, display_name })
+        body: JSON.stringify({ username, password })
     });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));

@@ -1,0 +1,12 @@
+[
+  { "key": "rockerboy", "label": "Rockerboy", "flavorBlurb": "Rebel rockers who use music and performance to fight authority." },
+  { "key": "solo", "label": "Solo", "flavorBlurb": "Hired hitmen, bodyguards, and mercenaries." },
+  { "key": "netrunner", "label": "Netrunner", "flavorBlurb": "Cybernetic computer hackers who slip through the net." },
+  { "key": "tech", "label": "Tech", "flavorBlurb": "Renegade mechanics and doctors patching up meat and metal." },
+  { "key": "medtech", "label": "Medtech", "flavorBlurb": "Street doctors who keep the edge-runners alive." },
+  { "key": "media", "label": "Media", "flavorBlurb": "Journalists and reporters risking it all for the truth." },
+  { "key": "lawman", "label": "Lawman", "flavorBlurb": "Maximum law enforcement patrolling the mean streets." },
+  { "key": "exec", "label": "Exec", "flavorBlurb": "Corporate slickers moving in the high-stakes boardrooms." },
+  { "key": "fixer", "label": "Fixer", "flavorBlurb": "Dealmakers, smugglers, organizers, and information brokers." },
+  { "key": "nomad", "label": "Nomad", "flavorBlurb": "Road warriors driving the highways and transport lines." }
+]

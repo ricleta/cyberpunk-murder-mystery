@@ -1,0 +1,197 @@
+{
+  "culturalOrigin": {
+    "label": "Cultural Origin",
+    "options": [
+      { "id": "north_american", "text": "North American" },
+      { "id": "south_central_american", "text": "South/Central American" },
+      { "id": "western_european", "text": "Western European" },
+      { "id": "eastern_european", "text": "Eastern European" },
+      { "id": "middle_eastern_north_african", "text": "Middle Eastern/North African" },
+      { "id": "sub_saharan_african", "text": "Sub-Saharan African" },
+      { "id": "south_asian", "text": "South Asian" },
+      { "id": "south_east_asian", "text": "South East Asian" },
+      { "id": "east_asian", "text": "East Asian" },
+      { "id": "oceania_pacific_islander", "text": "Oceania/Pacific Islander" }
+    ]
+  },
+  "personality": {
+    "label": "Personality",
+    "options": [
+      { "id": "shy_and_secretive", "text": "Shy and secretive" },
+      { "id": "rebellious_antisocial_violent", "text": "Rebellious, antisocial, and violent" },
+      { "id": "arrogant_proud_aloof", "text": "Arrogant, proud, and aloof" },
+      { "id": "moody_rash_headstrong", "text": "Moody, rash, and headstrong" },
+      { "id": "picky_fussy_nervous", "text": "Picky, fussy, and nervous" },
+      { "id": "stable_and_serious", "text": "Stable and serious" },
+      { "id": "silly_and_fluff_headed", "text": "Silly and fluff-headed" },
+      { "id": "sneaky_and_deceptive", "text": "Sneaky and deceptive" },
+      { "id": "intellectual_and_detached", "text": "Intellectual and detached" },
+      { "id": "friendly_and_outgoing", "text": "Friendly and outgoing" }
+    ]
+  },
+  "clothingStyle": {
+    "label": "Clothing Style",
+    "options": [
+      { "id": "generic_chic", "text": "Generic Chic (Standard, Colorful, Modular)" },
+      { "id": "leisurewear", "text": "Leisurewear (Comfort, Agility, Athleticism)" },
+      { "id": "urban_flash", "text": "Urban Flash (Flashy, Technological, Streetwear)" },
+      { "id": "businesswear", "text": "Businesswear (Leadership, Presence, Authority)" },
+      { "id": "high_fashion", "text": "High Fashion (Exclusive, Designer, Couture)" },
+      { "id": "bohemian", "text": "Bohemian (Folksy, Retro, Free-spirited)" },
+      { "id": "bag_lady_chic", "text": "Bag Lady Chic (Homeless, Ragged, Vagrant)" },
+      { "id": "gang_colors", "text": "Gang Colors (Dangerous, Violent, Rebellious)" },
+      { "id": "nomad_leathers", "text": "Nomad Leathers (Western, Rugged, Tribal)" },
+      { "id": "asia_pop", "text": "Asia Pop (Bright, Costume-like, Youthful)" }
+    ]
+  },
+  "hairstyle": {
+    "label": "Hairstyle",
+    "options": [
+      { "id": "mohawk", "text": "Mohawk" },
+      { "id": "long_and_ratty", "text": "Long and ratty" },
+      { "id": "short_and_spiked", "text": "Short and spiked" },
+      { "id": "wild_and_all_over", "text": "Wild and all over" },
+      { "id": "bald", "text": "Bald" },
+      { "id": "striped", "text": "Striped" },
+      { "id": "wild_colors", "text": "Wild colors" },
+      { "id": "neat_and_short", "text": "Neat and short" },
+      { "id": "short_curly", "text": "Short, curly" },
+      { "id": "long_straight", "text": "Long, straight" }
+    ]
+  },
+  "affectation": {
+    "label": "Affectation",
+    "options": [
+      { "id": "tattoos", "text": "Tattoos" },
+      { "id": "mirrorshades", "text": "Mirrorshades" },
+      { "id": "ritual_scars", "text": "Ritual scars" },
+      { "id": "spiked_gloves", "text": "Spiked gloves" },
+      { "id": "nose_rings", "text": "Nose rings" },
+      { "id": "tongue_or_other_piercings", "text": "Tongue or other piercings" },
+      { "id": "strange_fingernail_implants", "text": "Strange fingernail implants" },
+      { "id": "spiked_boots_or_heels", "text": "Spiked boots or heels" },
+      { "id": "fingerless_gloves", "text": "Fingerless gloves" },
+      { "id": "strange_contacts", "text": "Strange contacts" }
+    ]
+  },
+  "valueMost": {
+    "label": "What Do You Value Most?",
+    "options": [
+      { "id": "money", "text": "Money" },
+      { "id": "honor", "text": "Honor" },
+      { "id": "your_word", "text": "Your word" },
+      { "id": "honesty", "text": "Honesty" },
+      { "id": "knowledge", "text": "Knowledge" },
+      { "id": "vengeance", "text": "Vengeance" },
+      { "id": "love", "text": "Love" },
+      { "id": "power", "text": "Power" },
+      { "id": "family", "text": "Family" },
+      { "id": "friendship", "text": "Friendship" }
+    ]
+  },
+  "feelingsAboutPeople": {
+    "label": "How Do You Feel About Most People?",
+    "options": [
+      { "id": "neutral", "text": "I stay neutral." },
+      { "id": "stay_away", "text": "I stay away from everyone." },
+      { "id": "like_most", "text": "I like almost everyone." },
+      { "id": "hate_most", "text": "I hate almost everyone." },
+      { "id": "tools", "text": "People are tools. Use them for your own goals then discard them." },
+      { "id": "valuable", "text": "Every person is a valuable individual." },
+      { "id": "obstacles", "text": "People are obstacles to be destroyed if they cross me." },
+      { "id": "untrustworthy", "text": "People are untrustworthy. Don't depend on anyone." },
+      { "id": "wipe_out", "text": "Wipe 'em all out and let the cockroaches take over." },
+      { "id": "wonderful", "text": "People are wonderful!" }
+    ]
+  },
+  "mostValuedPerson": {
+    "label": "Most Valued Person in Your Life",
+    "options": [
+      { "id": "parent", "text": "A parent" },
+      { "id": "sibling", "text": "A brother or sister" },
+      { "id": "lover", "text": "A lover" },
+      { "id": "friend", "text": "A friend" },
+      { "id": "oneself", "text": "Yourself" },
+      { "id": "pet", "text": "A pet" },
+      { "id": "mentor", "text": "A teacher or mentor" },
+      { "id": "public_figure", "text": "Public figure" },
+      { "id": "hero", "text": "A personal hero" },
+      { "id": "no_one", "text": "No one" }
+    ]
+  },
+  "mostValuedPossession": {
+    "label": "Most Valued Possession",
+    "options": [
+      { "id": "weapon", "text": "A weapon" },
+      { "id": "tool", "text": "A tool" },
+      { "id": "clothing", "text": "A piece of clothing" },
+      { "id": "photo", "text": "A photograph" },
+      { "id": "book_or_diary", "text": "A book or diary" },
+      { "id": "recording", "text": "A recording" },
+      { "id": "musical_instrument", "text": "A musical instrument" },
+      { "id": "jewelry", "text": "A piece of jewelry" },
+      { "id": "toy", "text": "A toy" },
+      { "id": "letter", "text": "A letter" }
+    ]
+  },
+  "familyBackground": {
+    "label": "Original Family Background",
+    "options": [
+      { "id": "corp_execs", "text": "Corporate Execs", "description": "Wealthy, powerful, with servants, luxury homes, and the best of everything. Private security made sure you were always safe. You definitely went to a big-name private school." },
+      { "id": "corp_managers", "text": "Corporate Managers", "description": "Well to do, with large homes, safe neighborhoods, nice cars, etc. Sometimes your parent(s) would hire servants, although this was rare. You had a mix of private and corporate education." },
+      { "id": "corp_technicians", "text": "Corporate Technicians", "description": "Middle-middle class, with comfortable conapts or Beaverville suburban homes, minivans and corporate-run technical schools. Kind of like living 1950s America crossed with 1984." },
+      { "id": "nomad_pack", "text": "Nomad Pack", "description": "You had a mix of rugged trailers, vehicles, and huge road kombis for your home. You learned to drive and fight at an early age, but the family was always there to care for you. Food was actually fresh and abundant. Mostly home schooled." },
+      { "id": "ganger_family", "text": "Ganger 'Family'", "description": "A savage, violent home in any place the gang could take over. You were usually hungry, cold, and scared. You probably didn't know who your actual parents were. Education? The Gang taught you how to fight, kill, and steal—what else did you need to know?" },
+      { "id": "combat_zoners", "text": "Combat Zoners", "description": "A step up from a gang 'family,' your home was a decaying building somewhere in the 'Zone', heavily fortified. You were hungry at times, but regularly could score a bed and a meal. Home schooled." },
+      { "id": "urban_homeless", "text": "Urban Homeless", "description": "You lived in cars, dumpsters, or abandoned shipping modules. If you were lucky. You were usually hungry, cold, and scared, unless you were tough enough to fight for the scraps. Education? School of Hard Knocks." },
+      { "id": "megastructure_warren_rats", "text": "Megastructure Warren Rats", "description": "You grew up in one of the huge new megastructures that went up after the War. A tiny conapt, kibble and scop for food, a mostly warm bed. Some better educated adult warren dwellers or a local Corporation may have set up a school." },
+      { "id": "reclaimers", "text": "Reclaimers", "description": "You started out on the road, but then moved into one of the deserted ghost towns or cities to rebuild it. A pioneer life: dangerous, but with plenty of simple food and a safe place to sleep. You were home schooled if there was anyone who had the time." },
+      { "id": "edgerunners", "text": "Edgerunners", "description": "Your home was always changing based on your parents' current 'job.' Could be a luxury apartment, an urban conapt, or a dumpster if you were on the run. Food and shelter ran the gamut from gourmet to kibble." }
+    ]
+  },
+  "childhoodEnvironment": {
+    "label": "Childhood Environment",
+    "options": [
+      { "id": "safe_corp_zone", "text": "Spent in a safe Corporate Zone driven to school in a bulletproof car." },
+      { "id": "nomad_pack_traveling", "text": "In a Nomad pack moving from town to town." },
+      { "id": "decaying_neighborhood", "text": "In a decaying, once upscale neighborhood, now holding off the gangs to survive." },
+      { "id": "combat_zone", "text": "In the heart of the Combat Zone, living in a wrecked building or other squat." },
+      { "id": "huge_megastructure", "text": "In a huge 'Megastructure' building controlled by a gang or Corp." },
+      { "id": "ruins", "text": "In the ruins of a deserted town or city." },
+      { "id": "corp_town", "text": "On the fringes of a large Corporate-controlled town." },
+      { "id": "cult", "text": "Raised in a religious cult, or some other isolated community." },
+      { "id": "research_facility", "text": "In a Corporate research facility." },
+      { "id": "hospital_or_orphanage", "text": "In an orphanage or medical facility." }
+    ]
+  },
+  "familyCrisis": {
+    "label": "Family Crisis",
+    "options": [
+      { "id": "lost_everything", "text": "Your family lost everything through betrayal." },
+      { "id": "lost_everything_bad_management", "text": "Your family lost everything through bad management." },
+      { "id": "exiled", "text": "Your family was exiled or otherwise driven from their original home/nation/Corporation." },
+      { "id": "imprisoned", "text": "Your family is imprisoned, and you alone escaped." },
+      { "id": "vanished", "text": "Your family vanished. You are the only remaining member." },
+      { "id": "murdered", "text": "Your family was murdered, and you were the only survivor." },
+      { "id": "conspiracy", "text": "Your family is involved in a long-term conspiracy, syndicate, or other criminal enterprise." },
+      { "id": "scattered", "text": "Your family was scattered to the winds due to misfortune." },
+      { "id": "cursed", "text": "Your family is cursed with a hereditary feud that has lasted generations." },
+      { "id": "debt", "text": "You are the inheritor of a family debt; you must honor this debt before moving on with your life." }
+    ]
+  },
+  "lifeGoals": {
+    "label": "Life Goals",
+    "options": [
+      { "id": "get_rid_of_reputation", "text": "Get rid of a bad reputation." },
+      { "id": "gain_power_and_control", "text": "Gain power and control." },
+      { "id": "get_off_the_street", "text": "Get off the Street no matter what it takes." },
+      { "id": "cause_pain", "text": "Cause pain and suffering to anyone who crosses you." },
+      { "id": "forget_the_past", "text": "Live down your past life and try to forget it." },
+      { "id": "hunt_down_enemies", "text": "Hunt down those responsible for your miserable life and make them pay." },
+      { "id": "get_what_is_mine", "text": "Get what's rightfully yours." },
+      { "id": "save_someone", "text": "Save, if possible, anyone else involved in your background, like a lover or family member." },
+      { "id": "gain_fame", "text": "Gain fame and recognition." },
+      { "id": "become_feared", "text": "Become feared and respected." }
+    ]
+  }
+}

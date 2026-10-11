@@ -4,9 +4,12 @@ import jwt
 from config import Config
 from models import Session, Character
 
+from flask import current_app
+
 def decode_token(token):
     try:
-        payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+        secret = current_app.config['JWT_SECRET_KEY'] if current_app else Config.JWT_SECRET_KEY
+        payload = jwt.decode(token, secret, algorithms=['HS256'])
         return payload
     except jwt.ExpiredSignatureError:
         return None

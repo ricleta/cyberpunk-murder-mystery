@@ -19,11 +19,11 @@ from models import db, Character, Relationship
 
 def load_generation_data():
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-    with open(os.path.join(base_dir, 'roleTags.json'), 'r') as f:
+    with open(os.path.join(base_dir, 'roleTags.json'), 'r', encoding='utf-8') as f:
         role_tags = json.load(f)
-    with open(os.path.join(base_dir, 'tagAffinity.json'), 'r') as f:
+    with open(os.path.join(base_dir, 'tagAffinity.json'), 'r', encoding='utf-8') as f:
         tag_affinity = json.load(f)
-    with open(os.path.join(base_dir, 'relationshipTypes.json'), 'r') as f:
+    with open(os.path.join(base_dir, 'relationshipTypes.json'), 'r', encoding='utf-8') as f:
         relationship_types = json.load(f)
     return role_tags, tag_affinity, relationship_types
 
@@ -207,26 +207,37 @@ def generate_relationship_text(rel_type_entry: dict, source_char: Character, tar
         "a well-kept secret"
     ]
     
-    grammar_source = {
-        "origin": rel_type_entry.get("templateSource", ""),
-        "targetName": target_char.display_name or "Unknown",
-        "sourceName": source_char.display_name or "Unknown",
-        "flavor": flavor_list
-    }
-    
-    flattened_source = tracery.Grammar(grammar_source).flatten("#origin#")
-    
+    source_name = source_char.display_name or "Unknown"
+    target_name = target_char.display_name or "Unknown"
+    # Pick flavor once so both sides of the same relationship read consistently
+    flavor = random.choice(flavor_list)
+
+    def render(template, about_name, other_name):
+        # #targetName# always means "the other person" from the reader's perspective
+        grammar = {
+            "origin": template,
+            "targetName": about_name,
+            "sourceName": other_name,
+            "flavor": flavor
+        }
+        return tracery.Grammar(grammar).flatten("#origin#")
+
+    flattened_source = render(rel_type_entry.get("templateSource", ""), target_name, source_name)
+
     if rel_type_entry.get("symmetric"):
-        flattened_target = flattened_source
+        # Symmetric types only have templateSource ("You and #targetName# ...").
+        # Re-render it from the target's perspective with the names swapped, otherwise
+        # the target character would read their own name ("You and <self> ...").
+        flattened_target = render(rel_type_entry.get("templateSource", ""), source_name, target_name)
     else:
         grammar_target = {
             "origin": rel_type_entry.get("templateTarget", ""),
-            "targetName": source_char.display_name or "Unknown",
-            "sourceName": target_char.display_name or "Unknown",
-            "flavor": flavor_list
+            "targetName": target_name,
+            "sourceName": source_name,
+            "flavor": flavor
         }
         flattened_target = tracery.Grammar(grammar_target).flatten("#origin#")
-        
+
     return flattened_source, flattened_target
 
 def _generate_relationships(session) -> list[Relationship]:
