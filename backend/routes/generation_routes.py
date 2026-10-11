@@ -9,7 +9,8 @@ from models import Session, SessionMember, Character, Relationship, Secret, Obje
 from auth import require_auth, is_session_gm
 from services.cleanup import clear_generated, clear_generation_metadata
 from services.errors import ApiError
-from services.serializers import serialize_relationship
+from generation.name_tokens import resolve_names, session_name_map
+from services.serializers import serialize_relationship, resolve_deep
 from generation.relationships import _generate_relationships, verify_session_graph
 from generation.secrets import _generate_secrets, verify_secrets, get_session_report
 from generation.report import store_report
@@ -21,6 +22,12 @@ from generation.objectives import (
 from generation.objective_templates import load_all_objective_templates
 
 bp = Blueprint('generation', __name__)
+
+
+def _readable(error, session_id):
+    """ValueError text from the generators can quote generated text, which holds name
+    tokens. Resolve them so the GM reads names, never {{c:...}}."""
+    return resolve_names(str(error), session_name_map(session_id))
 
 
 def _gated(allowed):
@@ -56,11 +63,11 @@ def generate_relationships(session_id):
         if clear_generated(session_id):
             db.session.commit()
         rels = _generate_relationships(session)
-        result = [serialize_relationship(r) for r in rels]
+        result = [serialize_relationship(r, session_name_map(session_id)) for r in rels]
         return jsonify({'relationships': result}), 200
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': _readable(e, session_id)}), 400
     except Exception:
         db.session.rollback()
         current_app.logger.exception('Generation failed for session %s', session_id)
@@ -87,7 +94,7 @@ def generate_secrets(session_id):
         return jsonify({'message': 'Secrets generated successfully'}), 200
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': _readable(e, session_id)}), 400
     except Exception:
         db.session.rollback()
         current_app.logger.exception('Generation failed for session %s', session_id)
@@ -127,7 +134,7 @@ def get_secrets_report(session_id):
                     'is_relaxed': entry['is_relaxed'],
                     'final_weight': entry['selection_weight']
                 })
-        return jsonify({'characters': list(char_reports.values()), 'relaxed': cached.get('relaxed', [])}), 200
+        return jsonify(resolve_deep({'characters': list(char_reports.values()), 'relaxed': cached.get('relaxed', [])}, session_name_map(session_id))), 200
 
     # Fallback if cache is absent
     pools = load_all_secret_templates()
@@ -175,7 +182,7 @@ def generate_objectives(session_id):
         return jsonify({'message': 'Objectives generated successfully'}), 200
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': _readable(e, session_id)}), 400
     except Exception:
         db.session.rollback()
         current_app.logger.exception('Generation failed for session %s', session_id)
@@ -231,7 +238,7 @@ def get_objectives_report(session_id):
                     char_reports[cid]['linked_pairs'].append({
                         'link_type': pair['link_type'], 'kind': pair['kind'], 'with_character_id': other
                     })
-        return jsonify({
+        return jsonify(resolve_deep({
             'characters': list(char_reports.values()),
             'relaxed': cached.get('relaxed', []),
             'fallbacks': cached.get('fallbacks', []),
@@ -239,7 +246,7 @@ def get_objectives_report(session_id):
             'scapegoat': cached.get('scapegoat'),
             'retries': cached.get('retries', 0),
             'failed_attempts': cached.get('failed_attempts', [])
-        }), 200
+        }, session_name_map(session_id))), 200
 
     # Fallback if cache is absent (e.g. after a restart): rebuild what the rows still tell us
     pools = load_all_objective_templates()
@@ -363,7 +370,7 @@ def generate_all(session_id):
         }), 200
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': _readable(e, session_id)}), 400
     except Exception:
         db.session.rollback()
         current_app.logger.exception('Generate pipeline failed for session %s', session_id)

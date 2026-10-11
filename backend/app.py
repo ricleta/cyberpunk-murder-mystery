@@ -5,10 +5,23 @@ from werkzeug.exceptions import HTTPException
 
 from config import Config, DEFAULT_SECRET_KEY, DEFAULT_JWT_SECRET_KEY
 from extensions import db, migrate, cors
+from generation.name_tokens import RAW_TOKEN_RE
 from services.errors import ApiError
 
 # Dev/test default: any localhost port.
 LOCAL_ORIGIN_RE = re.compile(r'^https?://(localhost|127\.0\.0\.1)(:\d+)?$')
+
+
+def _iter_strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from _iter_strings(k)
+            yield from _iter_strings(v)
+    elif isinstance(value, list):
+        for v in value:
+            yield from _iter_strings(v)
 
 
 def _check_production_config(app):
@@ -71,6 +84,17 @@ def create_app(config_class=Config):
     @app.route('/api/health')
     def health_check():
         return jsonify({'status': 'ok'})
+
+    if app.testing:
+        # Tripwire: any raw {{c:<id>}} token in a JSON response means a serializer forgot to
+        # resolve names. Raising here turns every endpoint test into a leak test.
+        @app.after_request
+        def fail_on_raw_name_tokens(response):
+            if app.config.get('NAME_TOKEN_TRIPWIRE', True) and response.is_json:
+                for text in _iter_strings(response.get_json(silent=True)):
+                    if RAW_TOKEN_RE.search(text):
+                        raise AssertionError(f'Raw name token leaked in {request.method} {request.path}: {text!r}')
+            return response
 
     @app.errorhandler(ApiError)
     def handle_api_error(e):

@@ -18,7 +18,9 @@ from generation.secret_templates import (
     validate_template_gates,
     render_grammar,
     assert_clean_render,
+    assert_no_name_modifiers,
 )
+from generation.name_tokens import name_token
 
 OBJECTIVE_KINDS = ('protect_secret', 'exploit_secret', 'relationship', 'flavor',
                    'find_killer', 'hide_evidence', 'frame', 'manual')
@@ -105,6 +107,7 @@ def _validate_text(t, field_name, kind, dummy_context, required=True):
         return
     allowed = ALLOWED_PLACEHOLDERS[kind]
     _assert_placeholders(text, t["id"], field_name, allowed)
+    assert_no_name_modifiers(text, t["id"], field_name)
     rendered = render_grammar(text, {k: v for k, v in dummy_context.items() if k in allowed})
     assert_clean_render(rendered, t["id"], field_name)
     if '((' in rendered:
@@ -142,8 +145,8 @@ def validate_objective_templates(data_dir=None):
             raise ValueError(f"categoryLabels.json has an invalid label for '{cat}': {label!r}")
 
     dummy_context = {
-        "ownerName": "DummyOwner",
-        "targetName": "DummyTarget",
+        "ownerName": name_token("dummy_owner"),
+        "targetName": name_token("dummy_target"),
         "victimName": "DummyVictim",
         "victimTitle": "DummyVictimTitle",
         "location": "DummyLocation",
@@ -248,14 +251,15 @@ def resolve_objective_template(template_str, template_id, kind, owner, target=No
     if '#secretLabel#' in template_str and not label:
         raise ValueError(f"Template '{template_id}' uses #secretLabel# but the objective has no secret")
 
+    # Names are {{c:<id>}} tokens, resolved when the objective is served.
     context = {
-        "ownerName": owner.display_name or "Someone",
+        "ownerName": name_token(owner.id),
         "victimName": victim_name or "Director Kessler Voss",
         "victimTitle": victim_title or "Executive",
         "location": location or "Night City",
     }
     if target:
-        context["targetName"] = target.display_name or "Someone"
+        context["targetName"] = name_token(target.id)
     if label:
         context["secretLabel"] = label
 

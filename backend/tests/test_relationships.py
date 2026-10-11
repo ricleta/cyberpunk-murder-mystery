@@ -1,4 +1,5 @@
 import pytest
+from generation.name_tokens import resolve_names
 from app import create_app
 from extensions import db
 from models import User, Session, SessionMember, Character, Relationship
@@ -97,8 +98,9 @@ def test_graph_construction_duplicate_roles():
     assert nx.is_connected(graph)
 
 def test_directional_text_correctness():
-    source_char = Character(display_name="Alice")
-    target_char = Character(display_name="Bob")
+    # Generated text stores {{c:<id>}} tokens; names are resolved when served
+    source_char = Character(id="alice", display_name="Alice")
+    target_char = Character(id="bob", display_name="Bob")
     rel_type_entry = {
         "id": "employer_employee",
         "symmetric": False,
@@ -107,12 +109,15 @@ def test_directional_text_correctness():
     }
     
     src, tgt = generate_relationship_text(rel_type_entry, source_char, target_char)
-    assert src == "You've hired Bob for work."
-    assert tgt == "Alice has hired you for work."
+    assert src == "You've hired {{c:bob}} for work."
+    assert tgt == "{{c:alice}} has hired you for work."
+    names = {"alice": "Alice", "bob": "Bob"}
+    assert resolve_names(src, names) == "You've hired Bob for work."
+    assert resolve_names(tgt, names) == "Alice has hired you for work."
 
 def test_symmetric_text_correctness():
-    source_char = Character(display_name="Alice")
-    target_char = Character(display_name="Bob")
+    source_char = Character(id="alice", display_name="Alice")
+    target_char = Character(id="bob", display_name="Bob")
     rel_type_entry = {
         "id": "rivals",
         "symmetric": True,
@@ -120,9 +125,9 @@ def test_symmetric_text_correctness():
     }
     
     src, tgt = generate_relationship_text(rel_type_entry, source_char, target_char)
-    assert src == "You and Bob are rivals."
+    assert src == "You and {{c:bob}} are rivals."
     # Symmetric text is re-rendered from the target's perspective (names swapped)
-    assert tgt == "You and Alice are rivals."
+    assert tgt == "You and {{c:alice}} are rivals."
 
 @pytest.fixture
 def setup_party(app):

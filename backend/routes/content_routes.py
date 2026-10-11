@@ -3,6 +3,7 @@ from extensions import db
 from models import Session, Character, Relationship, Secret, SecretKnowledge, Objective
 from auth import require_auth, is_session_gm
 from services import validation
+from generation.name_tokens import resolve_names, session_name_map
 from services.serializers import (
     serialize_objective, serialize_relationship,
     serialize_secret_for_gm, serialize_secret_for_subject, serialize_secret_for_knower,
@@ -24,6 +25,7 @@ def get_relationships(session_id):
     my_char = Character.query.filter_by(session_id=session_id, player_id=g.current_user_id).first()
 
     rels = Relationship.query.filter_by(session_id=session_id).all()
+    names = session_name_map(session_id)
 
     result = []
     for r in rels:
@@ -34,7 +36,7 @@ def get_relationships(session_id):
             if r.source_character_id != my_char.id and r.target_character_id != my_char.id:
                 continue
 
-        result.append(serialize_relationship(r))
+        result.append(serialize_relationship(r, names))
 
     return jsonify({'relationships': result}), 200
 
@@ -51,8 +53,7 @@ def get_secrets(session_id):
     secrets = Secret.query.filter_by(session_id=session_id).all()
     knowledge = SecretKnowledge.query.join(Secret).filter(Secret.session_id == session_id).all()
 
-    characters = Character.query.filter_by(session_id=session_id).all()
-    char_map = {c.id: c.display_name for c in characters}
+    char_map = session_name_map(session_id)
 
     result = []
 
@@ -111,11 +112,9 @@ def get_objectives(session_id):
         query = query.filter_by(character_id=my_char.id)
 
     rows = query.order_by(Objective.character_id, Objective.sort_order, Objective.created_at).all()
-    char_names = None
-    if is_gm:
-        char_names = {c.id: c.display_name for c in Character.query.filter_by(session_id=session_id).all()}
+    names = session_name_map(session_id)
 
-    return jsonify({'objectives': [serialize_objective(o, is_gm, char_names) for o in rows]}), 200
+    return jsonify({'objectives': [serialize_objective(o, is_gm, names) for o in rows]}), 200
 
 @bp.route('/<session_id>/objectives', methods=['POST'])
 @require_auth
@@ -157,7 +156,7 @@ def create_objective(session_id):
     db.session.add(objective)
     db.session.commit()
 
-    return jsonify({'objective': serialize_objective(objective, role == 'gm')}), 201
+    return jsonify({'objective': serialize_objective(objective, role == 'gm', session_name_map(session_id))}), 201
 
 @bp.route('/<session_id>/objectives/<objective_id>', methods=['PATCH'])
 @require_auth
@@ -183,9 +182,17 @@ def update_objective(session_id, objective_id):
         return jsonify({'error': 'points must be an integer from 1 to 3'}), 400
     new_text = validation.objective_text(data['text']) if 'text' in data else None
     new_hint = validation.gm_hint(data['gm_hint']) if 'gm_hint' in data else None
+    names = session_name_map(session_id)
+    # Clients send the text they were served (names resolved). Echoing it back unchanged
+    # must keep the stored {{c:<id>}} version, otherwise a PATCH would bake names in.
+    if new_text is not None and new_text == resolve_names(objective.text, names).strip():
+        new_text = None
+    if new_hint is not None and new_hint == (resolve_names(objective.gm_hint, names) or '').strip():
+        new_hint = None
+        data = {k: v for k, v in data.items() if k != 'gm_hint'}
 
     # Manual edits are free-form: only the 1-3 bound is enforced, budget rules are not re-run.
-    if 'text' in data:
+    if new_text is not None:
         objective.text = new_text
     if 'points' in data:
         objective.points = data['points']
@@ -193,7 +200,7 @@ def update_objective(session_id, objective_id):
         objective.gm_hint = new_hint
     db.session.commit()
 
-    return jsonify({'objective': serialize_objective(objective, role == 'gm')}), 200
+    return jsonify({'objective': serialize_objective(objective, role == 'gm', session_name_map(session_id))}), 200
 
 @bp.route('/<session_id>/objectives/<objective_id>', methods=['DELETE'])
 @require_auth

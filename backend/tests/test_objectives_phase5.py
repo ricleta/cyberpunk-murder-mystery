@@ -25,6 +25,7 @@ from generation.objectives import (
     SLOT_FRAME
 )
 from generation.objective_templates import load_all_objective_templates, validate_objective_templates
+from generation.name_tokens import name_token
 import jwt
 from datetime import datetime, timedelta
 
@@ -128,7 +129,7 @@ def assert_knowledge_safety(session):
                 assert o.related_character_id == s.subject_character_id
                 # never reference the other knowers
                 for other_id in knowers.get(s.id, set()) - {owner.id}:
-                    assert not mentions(o.text, chars[other_id].display_name)
+                    assert name_token(other_id) not in o.text
             # never embed the secret's own text
             assert s.text_subject not in o.text
             assert not s.text_knower or s.text_knower not in o.text
@@ -141,9 +142,9 @@ def assert_knowledge_safety(session):
         if o.kind == 'protect_secret':
             assert o.related_character_id is None
             for knower_id in knowers.get(o.related_secret_id, set()):
-                name = chars[knower_id].display_name
-                assert not mentions(o.text, name), f"protect text names knower {name}: {o.text}"
-                assert not mentions(o.gm_hint, name)
+                token = name_token(knower_id)
+                assert token not in o.text, f"protect text names knower {token}: {o.text}"
+                assert token not in (o.gm_hint or '')
 
         # 4. Killer-only content stays on the killer's sheet
         if owner.id != killer.id:
@@ -169,7 +170,7 @@ def assert_knowledge_safety(session):
     scapegoat = chars[frames[0].related_character_id]
     assert not scapegoat.is_killer
     assert scapegoat.id not in trail_knowers
-    assert mentions(frames[0].gm_hint, killer.display_name) and mentions(frames[0].gm_hint, scapegoat.display_name)
+    assert name_token(killer.id) in frames[0].gm_hint and name_token(scapegoat.id) in frames[0].gm_hint
 
     # Weaving: links are mutual and there are enough opposed pairs
     by_id = {o.id: o for o in objectives}

@@ -17,13 +17,13 @@ import os
 import json
 import math
 import random
-import re
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from models import db, Character, Relationship, Secret, SecretKnowledge, Objective, generate_uuid
 from generation.relationships import get_role_tags_flat
 from generation.report import store_report
+from generation.name_tokens import name_token
 from generation.secrets import verify_secrets
 from generation.secret_templates import (
     get_valid_lifepath_options,
@@ -426,13 +426,13 @@ def _build_drafts(session, world, tpl, scenario, role_tags, synonym_map, rng):
             shares_edge = o.id in killer_neighbors
             w = (tie_severity ** 2) * (1.5 if shares_edge else 1.0)
             weights.append(w)
-            candidate_report.append({"character_id": o.id, "display_name": world.name(o.id),
+            candidate_report.append({"character_id": o.id, "display_name": name_token(o.id),
                                      "victim_tie_severity": tie_severity, "shares_edge_with_killer": shares_edge,
                                      "weight": w})
         scapegoat = rng.choices(candidates, weights=weights, k=1)[0]
         add_simple(c, 'frame', SLOT_FRAME, "killer", target=scapegoat, related_character_id=scapegoat.id)
         scapegoat_report = {"killer_id": killer.id, "chosen_character_id": scapegoat.id,
-                            "chosen_name": world.name(scapegoat.id), "candidates": candidate_report}
+                            "chosen_name": name_token(scapegoat.id), "candidates": candidate_report}
 
     # Pass 7: Budget normalization.
     adjustments = []
@@ -474,11 +474,6 @@ def _build_drafts(session, world, tpl, scenario, role_tags, synonym_map, rng):
         "scapegoat": scapegoat_report,
     }
     return drafts, report
-
-def _contains_name(text, name):
-    if not text or not name:
-        return False
-    return re.search(r'(?<!\w)' + re.escape(name) + r'(?!\w)', text) is not None
 
 def _check_objectives(rows, world, killer_only_template_ids):
     """
@@ -595,8 +590,8 @@ def _check_objectives(rows, world, killer_only_template_ids):
             if o.related_character_id:
                 raise ValueError(f"Protect objective '{o.id}' on '{name}' must not reference another character")
             for knower_id in world.knowers.get(o.related_secret_id, []):
-                knower_name = world.char_by_id[knower_id].display_name
-                if _contains_name(o.text, knower_name) or _contains_name(o.gm_hint, knower_name):
+                knower_token = name_token(knower_id)
+                if knower_token in (o.text or '') or knower_token in (o.gm_hint or ''):
                     raise ValueError(f"Protect objective '{o.id}' on '{name}' names a knower of the secret")
 
         if o.linked_objective_id:

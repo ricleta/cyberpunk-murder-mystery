@@ -15,6 +15,7 @@ import random
 import networkx as nx
 import tracery
 from models import db, Character, Relationship
+from generation.name_tokens import name_token
 
 def load_generation_data():
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -209,8 +210,9 @@ def generate_relationship_text(rel_type_entry: dict, source_char: Character, tar
         "a well-kept secret"
     ]
     
-    source_name = source_char.display_name or "Unknown"
-    target_name = target_char.display_name or "Unknown"
+    # Names are {{c:<id>}} tokens, resolved when the text is served
+    source_name = name_token(source_char.id)
+    target_name = name_token(target_char.id)
     # Pick flavor once so both sides of the same relationship read consistently
     flavor = rng.choice(flavor_list)
 

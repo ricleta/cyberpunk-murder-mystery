@@ -6,6 +6,7 @@ import logging
 from collections import defaultdict
 import tracery
 from tracery.modifiers import base_english
+from generation.name_tokens import name_token
 
 logger = logging.getLogger(__name__)
 
@@ -277,12 +278,12 @@ def validate_secret_templates(data_dir=None):
         pool_files_map[f"roles/{r_key}.json [lie]"] = r_dict["lie"]
 
     dummy_context = {
-        "subjectName": "DummySubject",
-        "knowerName": "DummyKnower",
+        "subjectName": name_token("dummy_subject"),
+        "knowerName": name_token("dummy_knower"),
         "victimName": "DummyVictim",
         "victimTitle": "DummyVictimTitle",
         "location": "DummyLocation",
-        "otherName": "DummyOther"
+        "otherName": name_token("dummy_other")
     }
 
     for file_name, t_list in pool_files_map.items():
@@ -307,6 +308,8 @@ def validate_secret_templates(data_dir=None):
             t_sub = t.get("templateSubject")
             t_kno = t.get("templateKnower")
 
+            assert_no_name_modifiers(t_sub, t_id, "templateSubject")
+            assert_no_name_modifiers(t_kno, t_id, "templateKnower")
             if t_sub:
                 rendered_sub = render_grammar(t_sub, dummy_context)
                 assert_clean_render(rendered_sub, t_id, "templateSubject")
@@ -315,6 +318,18 @@ def validate_secret_templates(data_dir=None):
                 assert_clean_render(rendered_kno, t_id, "templateKnower")
 
     return True
+
+_NAME_MODIFIER_RE = re.compile(r'#(\w*Name)\.[^#]*#')
+
+def assert_no_name_modifiers(text, template_id, field_name):
+    """A Tracery modifier on a name placeholder (e.g. #subjectName.capitalize#) would be
+    applied to a {{c:<id>}} token and mangle it, so templates must not use one."""
+    if not text:
+        return
+    m = _NAME_MODIFIER_RE.search(text)
+    if m:
+        raise ValueError(f"Template '{template_id}' applies a modifier to a name placeholder in {field_name}: "
+                         f"'{m.group(0)}' (names are resolved after generation, so modifiers cannot be used)")
 
 def assert_clean_render(text, template_id, field_name):
     if '#' in text:
@@ -339,15 +354,17 @@ def resolve_template(template_str, template_id, subject, knower=None, victim_nam
     if '#otherName#' in template_str and not other:
         raise ValueError(f"Template '{template_id}' uses #otherName# but has no related_character_id")
 
+    # Character names are stored as {{c:<id>}} tokens and resolved when the text is served,
+    # so renaming a character never leaves stale text behind (see generation/name_tokens.py).
     context = {
-        "subjectName": subject.display_name if subject else "Someone",
-        "knowerName": knower.display_name if knower else "Someone",
+        "subjectName": name_token(subject.id) if subject else "Someone",
+        "knowerName": name_token(knower.id) if knower else "Someone",
         "victimName": victim_name or "Director Kessler Voss",
         "victimTitle": victim_title or "Executive",
         "location": location or "Night City"
     }
     if other:
-        context["otherName"] = other.display_name
+        context["otherName"] = name_token(other.id)
 
     rendered = render_grammar(template_str, context)
     assert_clean_render(rendered, template_id, "rendered text")
