@@ -19,6 +19,7 @@ import random
 import logging
 from models import db, Character, Relationship, Secret, SecretKnowledge
 from generation.relationships import get_role_tags_flat
+from generation.report import store_report
 from generation.secret_templates import (
     load_all_secret_templates,
     get_valid_lifepath_options,
@@ -33,11 +34,9 @@ from generation.secret_templates import (
 
 logger = logging.getLogger(__name__)
 
-# Cache for dev report debugging aid (§8)
-_secrets_report_cache = {}
-
-def get_session_report(session_id):
-    return _secrets_report_cache.get(session_id)
+def get_session_report(session):
+    """The persisted secrets report of a session (None if nothing was generated)."""
+    return (session.generation_report or {}).get('secrets')
 
 def _generate_secrets(session, rng=None, commit=True):
     """commit=False flushes instead of committing (including the auto-assigned killer
@@ -45,7 +44,8 @@ def _generate_secrets(session, rng=None, commit=True):
     if rng is None:
         rng = random.Random()
 
-    characters = Character.query.filter_by(session_id=session.id).all()
+    # Canonical order: a seeded rng must give the same result whatever order the DB returns rows in.
+    characters = sorted(Character.query.filter_by(session_id=session.id).all(), key=lambda c: c.id)
     if len(characters) < 3:
         raise ValueError("At least 3 characters are required in the session to generate secrets.")
     
@@ -53,7 +53,9 @@ def _generate_secrets(session, rng=None, commit=True):
     if incomplete:
         raise ValueError("Not all characters have completed their lifepath.")
         
-    relationships = Relationship.query.filter_by(session_id=session.id).all()
+    # Relationship ids are random per generation, so order by endpoints instead.
+    relationships = sorted(Relationship.query.filter_by(session_id=session.id).all(),
+                           key=lambda r: (r.source_character_id, r.target_character_id))
     if not relationships:
         raise ValueError("At least one relationship row must exist for the session.")
         
@@ -65,10 +67,12 @@ def _generate_secrets(session, rng=None, commit=True):
     if len(killers) > 1:
         raise ValueError("More than one killer found. Invalid state.")
         
+    # Always drawn, so the rng stream is the same whether or not the GM pre-set a killer
+    auto_killer = rng.choice(characters)
     if len(killers) == 1:
         killer = killers[0]
     else:
-        killer = rng.choice(characters)
+        killer = auto_killer
         killer.is_killer = True
         if commit:
             db.session.commit()
@@ -380,16 +384,22 @@ def _generate_secrets(session, rng=None, commit=True):
     else:
         db.session.flush()
 
-    # Cache report trace for dev reporting (§8)
-    _secrets_report_cache[session.id] = {
+    # Persist the report trace (read by verify_secrets and the DEBUG report endpoint)
+    store_report(session, "secrets", {
         "session_id": session.id,
         "relaxed": ctx.relaxed,
         "characters": ctx.report_entries
-    }
+    })
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
 
-def verify_secrets(session):
+def verify_secrets(session, report=None):
     """
     Validates all secrets generated for a session against gameplay and consistency invariants.
+    `report` is the secrets generation report (which characters needed relaxed picks);
+    by default it is read from the session's persisted generation_report.
     """
     secrets = Secret.query.filter_by(session_id=session.id).all()
     knowledge = SecretKnowledge.query.join(Secret).filter(Secret.session_id == session.id).all()
@@ -485,8 +495,7 @@ def verify_secrets(session):
 
     # 5. Every assigned template satisfies its own roles/excludeRoles against subject's role (unless relaxed)
     pools = load_all_secret_templates()
-    cached_report = _secrets_report_cache.get(session.id, {})
-    relaxed_char_ids = {r["character_id"] for r in cached_report.get("relaxed", [])}
+    relaxed_char_ids = {r["character_id"] for r in (report or get_session_report(session) or {}).get("relaxed", [])}
 
     char_map = {c.id: c for c in characters}
     for s in secrets:

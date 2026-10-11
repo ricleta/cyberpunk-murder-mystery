@@ -23,6 +23,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from models import db, Character, Relationship, Secret, SecretKnowledge, Objective, generate_uuid
 from generation.relationships import get_role_tags_flat
+from generation.report import store_report
 from generation.secrets import verify_secrets
 from generation.secret_templates import (
     get_valid_lifepath_options,
@@ -60,14 +61,9 @@ FIXED_POINT_KINDS = ('find_killer', 'hide_evidence', 'frame')
 # Slot order: the stable tie-break for sort_order
 SLOT_PROTECT, SLOT_EXPLOIT, SLOT_RELATIONSHIP, SLOT_FLAVOR, SLOT_GENERIC, SLOT_FRAME = range(6)
 
-# Cache for dev report debugging aid (§8)
-_objectives_report_cache = {}
-
-def get_objectives_report(session_id):
-    return _objectives_report_cache.get(session_id)
-
-def discard_objectives_report(session_id):
-    _objectives_report_cache.pop(session_id, None)
+def get_objectives_report(session):
+    """The persisted objectives report of a session (None if nothing was generated)."""
+    return (session.generation_report or {}).get('objectives')
 
 @dataclass
 class ObjectiveDraft:
@@ -722,9 +718,13 @@ def _generate_objectives(session, rng=None, commit=True):
     else:
         db.session.flush()
 
-    # Cache report trace for dev reporting (§8)
+    # Persist the report trace (read by the DEBUG report endpoint)
     report["attempts"] = len(failures) + 1
     report["retries"] = len(failures)
     report["failed_attempts"] = failures
-    _objectives_report_cache[session.id] = report
+    store_report(session, "objectives", report)
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return rows

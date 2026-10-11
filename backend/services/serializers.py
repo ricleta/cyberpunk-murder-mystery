@@ -4,7 +4,7 @@ Information hiding lives here: players only ever get what is on their own sheet;
 GM-only fields are added only when ``for_gm`` / ``viewer_is_gm`` is true.
 """
 from extensions import db
-from models import Character, Relationship, Secret, SecretKnowledge, Objective
+from models import Character, Secret, SecretKnowledge, Objective
 
 SHARED_LIFEPATH_FIELDS = (
     'cultural_origin', 'personality', 'clothing_style', 'hairstyle', 'affectation',

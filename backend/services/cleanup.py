@@ -51,3 +51,10 @@ def clear_generated(session_id, relationships=False):
     if relationships:
         deleted += Relationship.query.filter_by(session_id=session_id).delete(synchronize_session=False)
     return deleted
+
+
+def clear_generation_metadata(session):
+    """Forget the seed, timestamp and report of the previous generation. Does not commit."""
+    session.generation_seed = None
+    session.generated_at = None
+    session.generation_report = None

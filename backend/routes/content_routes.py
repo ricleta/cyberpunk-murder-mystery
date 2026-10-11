@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, g
 from extensions import db
 from models import Session, Character, Relationship, Secret, SecretKnowledge, Objective
 from auth import require_auth, is_session_gm
+from services import validation
 from services.serializers import (
     serialize_objective, serialize_relationship,
     serialize_secret_for_gm, serialize_secret_for_subject, serialize_secret_for_knower,
@@ -123,8 +124,9 @@ def create_objective(session_id):
     if not session:
         return jsonify({'error': 'Session not found'}), 404
 
-    data = request.get_json() or {}
-    character = Character.query.get(data.get('character_id')) if data.get('character_id') else None
+    data = validation.json_object()
+    character_id = data.get('character_id')
+    character = Character.query.get(character_id) if character_id and isinstance(character_id, str) else None
     if not character or character.session_id != session_id:
         return jsonify({'error': 'Character not found'}), 404
 
@@ -135,10 +137,12 @@ def create_objective(session_id):
     text = data.get('text')
     if not isinstance(text, str) or not text.strip():
         return jsonify({'error': 'Objective text is required'}), 400
+    text = validation.objective_text(text)
     if not _valid_points(data.get('points')):
         return jsonify({'error': 'points must be an integer from 1 to 3'}), 400
     if 'gm_hint' in data and role != 'gm':
         return jsonify({'error': 'Only GM can set gm_hint'}), 403
+    new_hint = validation.gm_hint(data['gm_hint']) if 'gm_hint' in data else None
 
     last = Objective.query.filter_by(character_id=character.id).order_by(Objective.sort_order.desc()).first()
     objective = Objective(
@@ -146,8 +150,8 @@ def create_objective(session_id):
         character_id=character.id,
         kind='manual',
         points=data['points'],
-        text=text.strip(),
-        gm_hint=data.get('gm_hint') if role == 'gm' else None,
+        text=text,
+        gm_hint=new_hint if role == 'gm' else None,
         sort_order=(last.sort_order or 0) + 1 if last else 0
     )
     db.session.add(objective)
@@ -170,21 +174,23 @@ def update_objective(session_id, objective_id):
     if not role:
         return jsonify({'error': 'Not authorized to edit this objective'}), 403
 
-    data = request.get_json() or {}
+    data = validation.json_object()
     if 'gm_hint' in data and role != 'gm':
         return jsonify({'error': 'Only GM can edit gm_hint'}), 403
     if 'text' in data and (not isinstance(data['text'], str) or not data['text'].strip()):
         return jsonify({'error': 'Objective text cannot be empty'}), 400
     if 'points' in data and not _valid_points(data['points']):
         return jsonify({'error': 'points must be an integer from 1 to 3'}), 400
+    new_text = validation.objective_text(data['text']) if 'text' in data else None
+    new_hint = validation.gm_hint(data['gm_hint']) if 'gm_hint' in data else None
 
     # Manual edits are free-form: only the 1-3 bound is enforced, budget rules are not re-run.
     if 'text' in data:
-        objective.text = data['text'].strip()
+        objective.text = new_text
     if 'points' in data:
         objective.points = data['points']
     if 'gm_hint' in data:
-        objective.gm_hint = data['gm_hint']
+        objective.gm_hint = new_hint
     db.session.commit()
 
     return jsonify({'objective': serialize_objective(objective, role == 'gm')}), 200

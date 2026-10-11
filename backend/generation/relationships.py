@@ -14,7 +14,6 @@ import json
 import random
 import networkx as nx
 import tracery
-from tracery.modifiers import base_english
 from models import db, Character, Relationship
 
 def load_generation_data():
@@ -95,7 +94,7 @@ def build_relationship_graph(characters: list[Character], role_tags: dict, tag_a
     tree = nx.Graph()
     tree.add_node(nodes[0])
     
-    unconnected = set(nodes[1:])
+    unconnected = list(nodes[1:])  # ordered: iteration order feeds rng.choices (a set would not be reproducible)
     while unconnected:
         candidates = []
         for u in tree.nodes:
@@ -257,7 +256,7 @@ def _generate_relationships(session, rng=None, commit=True) -> list[Relationship
     """commit=False flushes instead of committing, so a caller (the Generate pipeline)
     can run several generators inside one transaction."""
     rng = rng or random
-    characters = Character.query.filter_by(session_id=session.id).all()
+    characters = sorted(Character.query.filter_by(session_id=session.id).all(), key=lambda c: c.id)
     
     incomplete = [c.player_id for c in characters if not c.lifepath_complete or not c.role_key]
     if incomplete:

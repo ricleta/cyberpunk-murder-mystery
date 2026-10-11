@@ -1,10 +1,12 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, jsonify, g
 import random
 import string
 from extensions import db
 from models import Session, SessionMember, User, Character, Secret, Relationship, Objective
 from auth import require_auth, is_session_gm
+from services import validation
 from services.cleanup import delete_characters
+from services.session_lock import ensure_unlocked
 
 bp = Blueprint('sessions', __name__)
 
@@ -14,10 +16,11 @@ def generate_join_code():
 @bp.route('', methods=['POST'])
 @require_auth
 def create_session():
-    data = request.get_json() or {}
+    data = validation.json_object()
     name = data.get('name')
     if not name:
         return jsonify({'error': 'Session name is required'}), 400
+    name = validation.session_name(name)
 
     # Generate unique join code
     while True:
@@ -25,7 +28,7 @@ def create_session():
         if not Session.query.filter_by(join_code=code).first():
             break
 
-    auto_relationships = data.get('auto_relationships', True)
+    auto_relationships = validation.boolean(data.get('auto_relationships', True), 'auto_relationships')
     
     new_session = Session(
         gm_id=g.current_user_id,
@@ -80,21 +83,28 @@ def get_session(session_id):
     if not member and session.gm_id != g.current_user_id:
         return jsonify({'error': 'Not authorized to view this session'}), 403
 
-    return jsonify({
+    data = {
         'id': session.id,
         'name': session.name,
         'join_code': session.join_code,
         'gm_id': session.gm_id,
         'status': session.status
-    }), 200
+    }
+    if session.gm_id == g.current_user_id:
+        # GM-only: with an auto-assigned killer, the seed would let a player work out who it is
+        data['generation_seed'] = session.generation_seed
+        data['generated_at'] = session.generated_at.isoformat() if session.generated_at else None
+    return jsonify(data), 200
 
 @bp.route('/join', methods=['POST'])
 @require_auth
 def join_session():
-    data = request.get_json() or {}
+    data = validation.json_object()
     join_code = data.get('join_code')
     if not join_code:
         return jsonify({'error': 'Join code is required'}), 400
+    if not isinstance(join_code, str):
+        return jsonify({'error': 'Join code must be a string'}), 400
 
     session = Session.query.filter_by(join_code=join_code.upper()).first()
     if not session:
@@ -104,6 +114,9 @@ def join_session():
     existing_member = SessionMember.query.filter_by(session_id=session.id, user_id=g.current_user_id).first()
     if existing_member:
         return jsonify({'message': 'Already a member', 'session_id': session.id}), 200
+
+    ensure_unlocked(session, 'This game has already been generated, so no new players can join. '
+                             'The GM can reset the game in the lobby to reopen it.')
 
     new_member = SessionMember(session_id=session.id, user_id=g.current_user_id)
     db.session.add(new_member)
@@ -156,6 +169,9 @@ def remove_member(session_id, user_id):
     member = SessionMember.query.filter_by(session_id=session_id, user_id=user_id).first()
     if not member:
         return jsonify({'error': 'Member not found in session'}), 404
+
+    ensure_unlocked(session, 'The game has been generated, so players cannot be removed. '
+                             'Reset the game in the lobby first.')
 
     chars = Character.query.filter_by(session_id=session_id, player_id=user_id).all()
     delete_characters([c.id for c in chars])

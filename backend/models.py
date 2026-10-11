@@ -19,6 +19,10 @@ class Session(db.Model):
     status = db.Column(db.String, default='lobby')  # 'lobby' | 'generated' | 'active' | 'closed'
     auto_relationships = db.Column(db.Boolean, default=True)
     scenario_pack_id = db.Column(db.String, default='arasaka_soiree_v1')
+    # Generation metadata (GM-only: the seed could reveal an auto-assigned killer)
+    generation_seed = db.Column(db.Integer, nullable=True)
+    generated_at = db.Column(db.DateTime, nullable=True)
+    generation_report = db.Column(db.JSON, nullable=True)  # {"seed", "secrets": {...}, "objectives": {...}}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -38,10 +42,6 @@ class Character(db.Model):
     display_name = db.Column(db.String, nullable=True)
     description = db.Column(db.Text, default='')
     traits = db.Column(db.JSON, default=list)
-    # DEPRECATED (Phase 5): objectives now live in the Objective table. This column is no
-    # longer read or written. It is left in place because dropping columns on SQLite is
-    # risky; the drop is scheduled for Phase 6 cleanup.
-    objectives = db.Column(db.JSON, default=list)
 
     # Shared Lifepath fields
     cultural_origin = db.Column(db.String, nullable=True)

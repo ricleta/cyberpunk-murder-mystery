@@ -1,22 +1,26 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, jsonify, g, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from datetime import datetime, timedelta
 from extensions import db
 from models import User
-from config import Config
 from auth import require_auth
+from services import validation
+from services.errors import ApiError
 
 bp = Blueprint('auth', __name__)
 
 @bp.route('/signup', methods=['POST'])
 def signup():
-    data = request.get_json()
+    data = validation.json_object()
     username = data.get('username')
     password = data.get('password')
 
     if not username or not password:
         return jsonify({'error': 'Missing required fields'}), 400
+    # Rules apply on signup only; existing accounts keep working at login.
+    validation.username(username)
+    validation.password(password)
 
     if User.query.filter_by(username=username).first():
         return jsonify({'error': 'Username already registered'}), 409
@@ -29,8 +33,8 @@ def signup():
 
     token = jwt.encode({
         'user_id': new_user.id,
-        'exp': datetime.utcnow() + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-    }, Config.JWT_SECRET_KEY, algorithm='HS256')
+        'exp': datetime.utcnow() + timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
+    }, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
 
     return jsonify({
         'token': token,
@@ -42,12 +46,14 @@ def signup():
 
 @bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = validation.json_object()
     identifier = data.get('username')
     password = data.get('password')
 
     if not identifier or not password:
         return jsonify({'error': 'Missing username or password'}), 400
+    if not isinstance(identifier, str) or not isinstance(password, str):
+        raise ApiError('Username and password must be strings')
 
     user = User.query.filter_by(username=identifier).first()
 
@@ -56,8 +62,8 @@ def login():
 
     token = jwt.encode({
         'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-    }, Config.JWT_SECRET_KEY, algorithm='HS256')
+        'exp': datetime.utcnow() + timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
+    }, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
 
     return jsonify({
         'token': token,

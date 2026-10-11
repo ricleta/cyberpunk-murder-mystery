@@ -1,22 +1,47 @@
+import functools
+import random
+import secrets as stdlib_secrets  # not generation.secrets
+from datetime import datetime
+
 from flask import Blueprint, request, jsonify, g, current_app
 from extensions import db
 from models import Session, SessionMember, Character, Relationship, Secret, Objective
 from auth import require_auth, is_session_gm
-from services.cleanup import clear_generated
+from services.cleanup import clear_generated, clear_generation_metadata
+from services.errors import ApiError
 from services.serializers import serialize_relationship
 from generation.relationships import _generate_relationships, verify_session_graph
-from generation.secrets import _generate_secrets, verify_secrets, get_session_report, _secrets_report_cache
+from generation.secrets import _generate_secrets, verify_secrets, get_session_report
+from generation.report import store_report
 from generation.secret_templates import load_all_secret_templates
 from generation.objectives import (
-    _generate_objectives, verify_objectives, discard_objectives_report,
+    _generate_objectives, verify_objectives,
     get_objectives_report as get_cached_report,
 )
 from generation.objective_templates import load_all_objective_templates
 
 bp = Blueprint('generation', __name__)
 
+
+def _gated(allowed):
+    def decorator(f):
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            if not allowed():
+                return jsonify({'error': 'Not found'}), 404
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
+# The standalone generators skip the pipeline's single transaction, so they only exist in
+# development and tests. The report endpoints expose generation internals: DEBUG only.
+dev_only = _gated(lambda: current_app.debug or current_app.testing)
+debug_only = _gated(lambda: current_app.debug)
+
 @bp.route('/<session_id>/generate-relationships', methods=['POST'])
 @require_auth
+@dev_only
 def generate_relationships(session_id):
     session = Session.query.get(session_id)
     if not session:
@@ -36,12 +61,14 @@ def generate_relationships(session_id):
     except ValueError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('Generation failed for session %s', session_id)
         return jsonify({'error': 'Internal server error'}), 500
 
 @bp.route('/<session_id>/generate-secrets', methods=['POST'])
 @require_auth
+@dev_only
 def generate_secrets(session_id):
     session = Session.query.get(session_id)
     if not session:
@@ -61,16 +88,15 @@ def generate_secrets(session_id):
     except ValueError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('Generation failed for session %s', session_id)
         return jsonify({'error': 'Internal server error'}), 500
 
 @bp.route('/<session_id>/secrets/report', methods=['GET'])
 @require_auth
+@debug_only
 def get_secrets_report(session_id):
-    if not current_app.config.get('DEBUG'):
-        return jsonify({'error': 'Not found'}), 404
-
     session = Session.query.get(session_id)
     if not session:
         return jsonify({'error': 'Session not found'}), 404
@@ -79,7 +105,7 @@ def get_secrets_report(session_id):
         return jsonify({'error': 'Only GM can view secrets report'}), 403
 
     characters = Character.query.filter_by(session_id=session_id).all()
-    cached = get_session_report(session_id)
+    cached = get_session_report(session)
 
     if cached:
         char_reports = {}
@@ -130,6 +156,7 @@ def get_secrets_report(session_id):
 
 @bp.route('/<session_id>/generate-objectives', methods=['POST'])
 @require_auth
+@dev_only
 def generate_objectives(session_id):
     session = Session.query.get(session_id)
     if not session:
@@ -149,16 +176,15 @@ def generate_objectives(session_id):
     except ValueError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception('Generation failed for session %s', session_id)
         return jsonify({'error': 'Internal server error'}), 500
 
 @bp.route('/<session_id>/objectives/report', methods=['GET'])
 @require_auth
+@debug_only
 def get_objectives_report(session_id):
-    if not current_app.config.get('DEBUG'):
-        return jsonify({'error': 'Not found'}), 404
-
     session = Session.query.get(session_id)
     if not session:
         return jsonify({'error': 'Session not found'}), 404
@@ -179,7 +205,7 @@ def get_objectives_report(session_id):
             'linked_pairs': []
         }
 
-    cached = get_cached_report(session_id)
+    cached = get_cached_report(session)
     if cached:
         for entry in cached.get('objectives', []):
             cid = entry['character_id']
@@ -255,7 +281,20 @@ def get_objectives_report(session_id):
         'failed_attempts': []
     }), 200
 
-# --- Phase 5: single Generate pipeline (relationships -> secrets -> objectives) ---
+# --- Phase 5/6: single Generate pipeline (relationships -> secrets -> objectives) ---
+
+def _requested_seed():
+    """A client-chosen seed is honoured only in debug/testing; elsewhere it is ignored."""
+    raw = request.args.get('seed')
+    if raw is None or not (current_app.debug or current_app.testing):
+        return None
+    try:
+        seed = int(raw)
+    except ValueError:
+        raise ApiError('seed must be an integer')
+    if not 0 <= seed < 2 ** 32:
+        raise ApiError('seed must be between 0 and 4294967295')
+    return seed
 
 @bp.route('/<session_id>/generate', methods=['POST'])
 @require_auth
@@ -271,6 +310,7 @@ def generate_all(session_id):
     if status not in ('lobby', 'generated'):
         return jsonify({'error': f"Cannot generate while the session is '{status}'"}), 409
 
+    seed = _requested_seed()
     regenerate = request.args.get('regenerate', '').lower() in ('true', '1')
     has_existing = bool(
         Relationship.query.filter_by(session_id=session_id).first()
@@ -289,21 +329,29 @@ def generate_all(session_id):
     if [c for c in characters if not c.lifepath_complete]:
         return jsonify({'error': 'Not all characters have completed their lifepath.'}), 400
 
+    if seed is None:
+        seed = stdlib_secrets.randbits(32)
+    rng = random.Random(seed)  # one rng, passed through all three stages in order
+
     # One transaction: nothing below commits until all three stages have verified.
     # An existing is_killer assignment is kept; an auto-assigned one rolls back on failure.
     try:
         if has_existing:
             clear_generated(session_id, relationships=True)
+        clear_generation_metadata(session)
 
-        relationships = _generate_relationships(session, commit=False)
+        relationships = _generate_relationships(session, rng=rng, commit=False)
         verify_session_graph(session)
 
-        _generate_secrets(session, commit=False)
+        _generate_secrets(session, rng=rng, commit=False)
         verify_secrets(session)
 
-        objectives = _generate_objectives(session, commit=False)
+        objectives = _generate_objectives(session, rng=rng, commit=False)
         verify_objectives(session)
 
+        store_report(session, 'seed', seed)
+        session.generation_seed = seed
+        session.generated_at = datetime.utcnow()
         session.status = 'generated'
         db.session.commit()
         return jsonify({
@@ -315,11 +363,40 @@ def generate_all(session_id):
         }), 200
     except ValueError as e:
         db.session.rollback()
-        _secrets_report_cache.pop(session_id, None)
-        discard_objectives_report(session_id)
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        _secrets_report_cache.pop(session_id, None)
-        discard_objectives_report(session_id)
+        current_app.logger.exception('Generate pipeline failed for session %s', session_id)
         return jsonify({'error': 'Internal server error'}), 500
+
+@bp.route('/<session_id>/reset', methods=['POST'])
+@require_auth
+def reset_session(session_id):
+    """GM-only: back to a clean lobby. Deletes everything generated (including manual
+    objective edits); keeps characters and their is_killer flags."""
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    if not is_session_gm(g.current_user_id, session):
+        return jsonify({'error': 'Only GM can reset the game'}), 403
+
+    if session.status in ('active', 'closed'):
+        return jsonify({'error': f"Cannot reset while the session is '{session.status}'"}), 409
+
+    try:
+        counts = {
+            'objectives': Objective.query.filter_by(session_id=session_id).count(),
+            'secrets': Secret.query.filter_by(session_id=session_id).count(),
+            'relationships': Relationship.query.filter_by(session_id=session_id).count(),
+        }
+        clear_generated(session_id, relationships=True)
+        clear_generation_metadata(session)
+        session.status = 'lobby'
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Reset failed for session %s', session_id)
+        return jsonify({'error': 'Internal server error'}), 500
+
+    return jsonify({'message': 'Game reset to a clean slate', 'deleted': counts}), 200

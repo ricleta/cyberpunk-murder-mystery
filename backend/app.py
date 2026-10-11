@@ -1,19 +1,57 @@
-from flask import Flask, jsonify
-from config import Config
+import re
+
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException
+
+from config import Config, DEFAULT_SECRET_KEY, DEFAULT_JWT_SECRET_KEY
 from extensions import db, migrate, cors
+from services.errors import ApiError
+
+# Dev/test default: any localhost port.
+LOCAL_ORIGIN_RE = re.compile(r'^https?://(localhost|127\.0\.0\.1)(:\d+)?$')
+
+
+def _check_production_config(app):
+    """Refuse to start in production with insecure defaults. Debug/testing are exempt."""
+    if app.debug or app.testing:
+        return
+    problems = []
+    if app.config.get('SECRET_KEY') == DEFAULT_SECRET_KEY:
+        problems.append('SECRET_KEY is still the built-in development default')
+    if app.config.get('JWT_SECRET_KEY') == DEFAULT_JWT_SECRET_KEY:
+        problems.append('JWT_SECRET_KEY is still the built-in development default')
+    if not app.config.get('CORS_ORIGINS'):
+        problems.append('CORS_ORIGINS is not set (comma-separated list of allowed origins, e.g. https://you.github.io)')
+    if problems:
+        raise RuntimeError('Refusing to start: ' + '; '.join(problems) + '. See DEPLOY.md.')
+
+
+def _cors_origins(app):
+    configured = app.config.get('CORS_ORIGINS')
+    if configured:
+        origins = [o.strip().rstrip('/') for o in configured.split(',') if o.strip()]
+        if '*' in origins and not (app.debug or app.testing):
+            raise RuntimeError("Refusing to start: CORS_ORIGINS must list explicit origins, not '*'. See DEPLOY.md.")
+        return origins
+    return [LOCAL_ORIGIN_RE]
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    _check_production_config(app)
+
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app) # For production we will restrict this to specific origins
+    cors.init_app(app, resources={r'/api/*': {'origins': _cors_origins(app)}})
 
-    # Validate secret and objective templates at startup (fail loudly)
+    # Validate data files and templates at startup (fail loudly)
     from generation.secret_templates import validate_secret_templates
     from generation.objective_templates import validate_objective_templates
+    from services.lifepath_data import load_lifepath_data
     with app.app_context():
+        load_lifepath_data(reload=True)
         validate_secret_templates()
         validate_objective_templates()
     from routes.auth_routes import bp as auth_bp
@@ -33,5 +71,21 @@ def create_app(config_class=Config):
     @app.route('/api/health')
     def health_check():
         return jsonify({'status': 'ok'})
+
+    @app.errorhandler(ApiError)
+    def handle_api_error(e):
+        return e.to_response()
+
+    @app.errorhandler(Exception)
+    def handle_unexpected(e):
+        if isinstance(e, HTTPException):
+            if request.path.startswith('/api'):
+                return jsonify({'error': e.description or e.name}), e.code
+            return e
+        db.session.rollback()
+        if not request.path.startswith('/api'):
+            raise e
+        app.logger.exception('Unhandled error on %s %s', request.method, request.path)
+        return jsonify({'error': 'Internal server error'}), 500
 
     return app

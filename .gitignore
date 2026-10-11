@@ -1,2 +1,9 @@
 *.pyc
 __pycache__/
+.pytest_cache/
+.venv/
+venv/
+.env
+node_modules/
+*.db
+backend/instance/

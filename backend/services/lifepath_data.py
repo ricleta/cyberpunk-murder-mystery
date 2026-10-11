@@ -1,21 +1,37 @@
 import json
 import os
 
-def load_lifepath_data():
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'data'))
-    try:
-        with open(os.path.join(base_dir, 'lifepathShared.json'), 'r', encoding='utf-8') as f:
-            shared = json.load(f)
-        with open(os.path.join(base_dir, 'factionTypes.json'), 'r', encoding='utf-8') as f:
-            faction_types = json.load(f)
-        with open(os.path.join(base_dir, 'factionFeelings.json'), 'r', encoding='utf-8') as f:
-            faction_feelings = json.load(f)
-        with open(os.path.join(base_dir, 'rolesLifepath.json'), 'r', encoding='utf-8') as f:
-            roles = json.load(f)
-        return shared, faction_types, faction_feelings, roles
-    except Exception as e:
-        print(f"Error loading lifepath data: {e}")
-        return {}, {}, {}, {}
+from generation.secret_templates import get_base_data_dir
+
+_REQUIRED_FILES = ('lifepathShared.json', 'factionTypes.json', 'factionFeelings.json', 'rolesLifepath.json', 'roles.json')
+_cache = {}
+
+
+def _read(name):
+    with open(os.path.join(get_base_data_dir(), name), 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def load_lifepath_data(reload=False):
+    """(shared, faction_types, faction_feelings, roles_lifepath), read once from
+    backend/data and cached. Raises if a file is missing: the app calls this at
+    startup so a bad deploy fails loudly instead of rejecting every Lifepath PATCH."""
+    if reload or 'lifepath' not in _cache:
+        for name in _REQUIRED_FILES:
+            path = os.path.join(get_base_data_dir(), name)
+            if not os.path.isfile(path):
+                raise RuntimeError(f"Required data file is missing: {path} (run copy_data.py from backend/)")
+        _cache['lifepath'] = (_read('lifepathShared.json'), _read('factionTypes.json'),
+                              _read('factionFeelings.json'), _read('rolesLifepath.json'))
+        _cache['role_keys'] = frozenset(r['key'] for r in _read('roles.json'))
+    return _cache['lifepath']
+
+
+def get_role_keys():
+    """Valid role keys (the keys of roles.json)."""
+    load_lifepath_data()
+    return _cache['role_keys']
+
 
 def is_valid_option(value, table_data):
     if not value or not table_data or 'options' not in table_data: return False

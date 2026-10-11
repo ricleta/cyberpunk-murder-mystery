@@ -1,14 +1,13 @@
 import functools
 from flask import request, jsonify, g
 import jwt
-from config import Config
-from models import Session, Character
+from models import Session
 
 from flask import current_app
 
 def decode_token(token):
     try:
-        secret = current_app.config['JWT_SECRET_KEY'] if current_app else Config.JWT_SECRET_KEY
+        secret = current_app.config['JWT_SECRET_KEY']
         payload = jwt.decode(token, secret, algorithms=['HS256'])
         return payload
     except jwt.ExpiredSignatureError:

@@ -491,7 +491,7 @@ def test_character_serialization_uses_objective_table(client, app, generated, ge
     res = client.patch(url, json={'objectives': ['old style objective']}, headers=auth(generate_token(generated['players'][0])))
     assert res.status_code == 200
     with app.app_context():
-        assert not Character.query.get(generated['chars'][0]).objectives
+        assert not hasattr(Character.query.get(generated['chars'][0]), 'objectives')  # column dropped in Phase 6
         assert Objective.query.filter_by(character_id=generated['chars'][0]).count() == len(objectives)
 
 def test_patch_objective_permissions_and_validation(client, app, generated, generate_token):
@@ -600,9 +600,10 @@ def test_objectives_report_endpoint(client, app, generated, generate_token):
 
     assert client.get(url, headers=auth(generate_token(generated['players'][0]))).status_code == 403
 
-    # Without the in-memory cache the report is rebuilt from the rows
-    from generation.objectives import discard_objectives_report
-    discard_objectives_report(generated['session'])
+    # Without the persisted report it is rebuilt from the rows
+    with app.app_context():
+        Session.query.get(generated['session']).generation_report = None
+        db.session.commit()
     res = client.get(url, headers=gm)
     assert res.status_code == 200
     assert len(res.json['characters']) == 5
