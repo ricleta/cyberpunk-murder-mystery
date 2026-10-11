@@ -1,0 +1,239 @@
+[
+  {
+    "id": "protect_generic_public",
+    "category": "protect_generic",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [],
+    "templateText": "Make sure what you're hiding about #secretLabel# never becomes public tonight.",
+    "templateHint": "Award if #ownerName#'s secret was not revealed to the group or put on the record. Favor a player who actively tried."
+  },
+  {
+    "id": "protect_generic_deny",
+    "category": "protect_generic",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [],
+    "templateText": "If anyone raises #secretLabel#, shut it down. By the end of the night nobody in this house should be repeating it.",
+    "templateHint": "Award if the secret never spread past whoever already knew it. Deny the points if #ownerName# confessed it to the room."
+  },
+  {
+    "id": "protect_generic_walk_out",
+    "category": "protect_generic",
+    "biasTags": [
+      "covert",
+      "criminal"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [],
+    "templateText": "Walk out of the estate with #secretLabel# still buried. Lie, bargain, or change the subject, whatever it takes.",
+    "templateHint": "Award if #ownerName#'s secret was still private when the final vote was called."
+  },
+  {
+    "id": "protect_debt",
+    "category": "protect_debt",
+    "biasTags": [
+      "street",
+      "sells_labor"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "financial_debt",
+      "underworld_debt"
+    ],
+    "templateText": "Nobody here learns how deep in the hole you are. Keep #secretLabel# out of every conversation tonight.",
+    "templateHint": "Award if no other player could state what #ownerName# owes by the end of the night."
+  },
+  {
+    "id": "protect_false_front",
+    "category": "protect_false_front",
+    "biasTags": [
+      "public_facing",
+      "authority"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "false_identity",
+      "false_backstory",
+      "false_credentials",
+      "false_reputation",
+      "false_artistry",
+      "false_credit",
+      "false_honor",
+      "false_integrity",
+      "false_merit",
+      "false_network",
+      "false_safety",
+      "bot_manipulation",
+      "corporate_puppet",
+      "hidden_wealth",
+      "unprovoked_violence",
+      "vehicle_theft",
+      "dishonorable_exile",
+      "conflict_of_interest",
+      "sellout",
+      "plagiarism"
+    ],
+    "templateText": "Your story has to hold. Nobody leaves tonight knowing the truth behind #secretLabel#.",
+    "templateHint": "Award if #ownerName#'s cover story was never publicly contradicted with the real facts."
+  },
+  {
+    "id": "protect_habit",
+    "category": "protect_habit",
+    "biasTags": [
+      "violent",
+      "street"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "addiction",
+      "substance_dependency"
+    ],
+    "templateText": "Stay steady. Nobody sees a crack tonight, and nobody learns about #secretLabel#.",
+    "templateHint": "Award if #ownerName#'s condition was never exposed to the group. Favor a player who roleplayed keeping it together."
+  },
+  {
+    "id": "protect_betrayal",
+    "category": "protect_betrayal",
+    "biasTags": [
+      "covert",
+      "corporate"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "betrayal",
+      "corporate_betrayal",
+      "corporate_treason",
+      "client_betrayal",
+      "deal_betrayal",
+      "source_betrayal",
+      "clan_treason",
+      "clan_desertion",
+      "bounty_leak",
+      "heist_setup",
+      "military_desertion"
+    ],
+    "templateText": "The people you sold out cannot find out it was you. Keep #secretLabel# off the table until you are out the door.",
+    "templateHint": "Award if nobody publicly tied #ownerName# to the betrayal tonight."
+  },
+  {
+    "id": "protect_blood",
+    "category": "protect_blood",
+    "biasTags": [
+      "technical",
+      "violent"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "botched_contract",
+      "collateral_damage",
+      "medical_malpractice",
+      "net_casualty",
+      "organ_theft",
+      "unethical_experimentation",
+      "convoy_catastrophe",
+      "environmental_crime",
+      "incitement",
+      "sabotage"
+    ],
+    "templateText": "Someone got hurt and it traces back to you. Make sure #secretLabel# stays a rumor with no name attached.",
+    "templateHint": "Award if #ownerName# was never named to the group as the one responsible."
+  },
+  {
+    "id": "protect_money",
+    "category": "protect_money",
+    "biasTags": [
+      "criminal",
+      "hires_labor"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "matchSecretKinds": [
+      "self",
+      "lie"
+    ],
+    "matchCategories": [
+      "embezzlement",
+      "theft",
+      "underworld_theft",
+      "fraud",
+      "fencing_contraband",
+      "police_corruption",
+      "blackmail_payout",
+      "extortion_rig",
+      "illicit_arms",
+      "illicit_distribution",
+      "contraband_smuggling",
+      "corporate_espionage"
+    ],
+    "templateText": "Nobody follows the money tonight. Keep #secretLabel# off the record and out of the gossip.",
+    "templateHint": "Award if #ownerName#'s side business was not revealed to the group or put on the record."
+  }
+]

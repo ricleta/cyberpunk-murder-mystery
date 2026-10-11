@@ -1,0 +1,41 @@
+[
+  {
+    "id": "find_killer_vote",
+    "category": "find_killer",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "templateText": "Work out who killed #victimName# and vote for them when the time comes.",
+    "templateHint": "Award if #ownerName# voted for the actual killer in the final accusation.",
+    "points": 2
+  },
+  {
+    "id": "find_killer_name",
+    "category": "find_killer",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "templateText": "Someone in this house poisoned #victimName#. Name the right person in the final vote.",
+    "templateHint": "Award if #ownerName# voted for the actual killer in the final accusation.",
+    "points": 2
+  },
+  {
+    "id": "find_killer_accuse",
+    "category": "find_killer",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "templateText": "Find #victimName#'s killer. You score only if your final accusation is correct.",
+    "templateHint": "Award if #ownerName# voted for the actual killer in the final accusation.",
+    "points": 2
+  }
+]

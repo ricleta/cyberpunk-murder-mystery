@@ -1,0 +1,363 @@
+[
+  {
+    "id": "flavor_rockerboy_stage",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "rockerboy"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Take the room at least once tonight: a toast, a speech, a song, a scene. Make it about something you believe.",
+    "templateHint": "Award if #ownerName# held the whole group's attention for a statement or performance.",
+    "points": 1
+  },
+  {
+    "id": "flavor_solo_contract",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "solo"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Leave with a new contract offer from someone at this party.",
+    "templateHint": "Award if another player offered #ownerName# paid work.",
+    "points": 1
+  },
+  {
+    "id": "flavor_netrunner_data",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "netrunner"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Learn something about another guest that you could only have pulled from their data, and let them know you have it.",
+    "templateHint": "Award if #ownerName# confronted another player with a fact they had no ordinary way of knowing.",
+    "points": 1
+  },
+  {
+    "id": "flavor_tech_hardware",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "tech"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Get a guest to trust you with their hardware tonight: a repair, an upgrade, a diagnostic. Name your price.",
+    "templateHint": "Award if another player agreed to let #ownerName# work on their gear or chrome.",
+    "points": 1
+  },
+  {
+    "id": "flavor_medtech_confide",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "medtech"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Get one guest to confide a medical problem, a habit, or an old injury to you in private.",
+    "templateHint": "Award if another player told #ownerName# something about their health in confidence.",
+    "points": 1
+  },
+  {
+    "id": "flavor_media_on_record",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "media"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Get one guest on the record, by name, about #victimName#. A quote you could publish.",
+    "templateHint": "Award if a player knowingly gave #ownerName# an attributable statement about the victim.",
+    "points": 2
+  },
+  {
+    "id": "flavor_lawman_statements",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "lawman"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Take a statement from at least three guests about where they were when #victimName# died.",
+    "templateHint": "Award if #ownerName# questioned three different players about their whereabouts.",
+    "points": 2
+  },
+  {
+    "id": "flavor_exec_succession",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "exec"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "#victimName#'s seat is empty. Leave with a commitment from one guest to do business with you once it is filled.",
+    "templateHint": "Award if another player agreed to a future deal with #ownerName#.",
+    "points": 2
+  },
+  {
+    "id": "flavor_fixer_broker",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "fixer"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Broker one deal between two other guests tonight and take your cut, in eddies or in a favor.",
+    "templateHint": "Award if #ownerName# arranged a deal between two other players and was paid for it.",
+    "points": 2
+  },
+  {
+    "id": "flavor_nomad_passage",
+    "category": "flavor_role",
+    "biasTags": [],
+    "roles": [
+      "nomad"
+    ],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Your people need a friend in the city. Secure safe passage or steady work for them from someone here with real pull.",
+    "templateHint": "Award if another player promised #ownerName# protection, passage, or work.",
+    "points": 1
+  },
+  {
+    "id": "flavor_goal_power",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "gain_power_and_control"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "#victimName#'s death leaves a vacuum. Get two guests to agree to back you in whatever comes next.",
+    "templateHint": "Award if two different players pledged support to #ownerName#.",
+    "points": 2
+  },
+  {
+    "id": "flavor_goal_off_street",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "get_off_the_street"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "This house is your way off the Street. Leave with a patron: a job, a sponsor, or a contract with a corporate name on it.",
+    "templateHint": "Award if another player offered #ownerName# a lasting position or sponsorship.",
+    "points": 2
+  },
+  {
+    "id": "flavor_goal_fame",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "gain_fame"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Make sure everyone here remembers your name. Be the one who announces something important to the whole room.",
+    "templateHint": "Award if #ownerName# was the first to reveal a significant fact to the whole group.",
+    "points": 1
+  },
+  {
+    "id": "flavor_goal_feared",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "become_feared",
+        "cause_pain"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Make one guest visibly back down from you tonight.",
+    "templateHint": "Award if another player gave ground to #ownerName# out of intimidation.",
+    "points": 1
+  },
+  {
+    "id": "flavor_goal_reputation",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "get_rid_of_reputation"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "People here have heard things about you. Get one guest to speak well of you in front of the others.",
+    "templateHint": "Award if another player publicly praised or vouched for #ownerName#.",
+    "points": 1
+  },
+  {
+    "id": "flavor_goal_forget",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "forget_the_past"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Go the whole night without telling anyone a true thing about where you came from.",
+    "templateHint": "Award if #ownerName# never revealed a true detail of their background.",
+    "points": 1
+  },
+  {
+    "id": "flavor_goal_payback",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "hunt_down_enemies"
+      ]
+    },
+    "boostLifepath": {
+      "value_most": {
+        "vengeance": 1.5
+      }
+    },
+    "weight": 3.0,
+    "templateText": "Someone in this house helped make your life what it is. Pick one guest and make them pay tonight: embarrassed, out of pocket, or in your debt.",
+    "templateHint": "Award if #ownerName# named a target to the GM and that player ended the night worse off because of them.",
+    "points": 2
+  },
+  {
+    "id": "flavor_goal_whats_mine",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "get_what_is_mine"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "#victimName# died owing you. Get someone here to acknowledge the debt and promise to make it right.",
+    "templateHint": "Award if another player accepted #ownerName#'s claim and promised compensation.",
+    "points": 2
+  },
+  {
+    "id": "flavor_goal_save_someone",
+    "category": "flavor_lifepath",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {
+      "life_goals": [
+        "save_someone"
+      ]
+    },
+    "boostLifepath": {},
+    "weight": 3.0,
+    "templateText": "Someone you care about depends on tonight going well. Leave with a favor owed to you by the most powerful guest in the room.",
+    "templateHint": "Award if a high-status player promised #ownerName# a favor.",
+    "points": 1
+  },
+  {
+    "id": "flavor_any_richer",
+    "category": "flavor_generic",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {
+      "value_most": {
+        "money": 2.5
+      }
+    },
+    "weight": 0.6,
+    "templateText": "Leave richer than you arrived. Get any guest to hand you eddies, for any reason.",
+    "templateHint": "Award if another player paid #ownerName# anything.",
+    "points": 1
+  },
+  {
+    "id": "flavor_any_ally",
+    "category": "flavor_generic",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {
+      "value_most": {
+        "friendship": 2.5,
+        "your_word": 1.5
+      }
+    },
+    "weight": 0.6,
+    "templateText": "Nobody gets through a night like this alone. Make one ally here who will stand next to you at the final vote.",
+    "templateHint": "Award if another player openly sided with #ownerName# during the final accusation.",
+    "points": 1
+  },
+  {
+    "id": "flavor_any_last_seen",
+    "category": "flavor_generic",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {
+      "value_most": {
+        "knowledge": 2.5,
+        "honesty": 1.5
+      }
+    },
+    "weight": 0.6,
+    "templateText": "Find out what really went on in #location# tonight. Someone was in there who should not have been.",
+    "templateHint": "Award if #ownerName# established who was in #location# during the evening.",
+    "points": 1
+  }
+]

@@ -1,0 +1,431 @@
+[
+  {
+    "id": "rel_family_shield",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "family"
+    ],
+    "link": "aligned",
+    "templateSource": "Blood is blood. Whatever happened tonight, make sure #targetName# is not the one voted guilty.",
+    "templateTarget": "Blood is blood. Whatever happened tonight, make sure #targetName# is not the one voted guilty.",
+    "hintSource": "Award if #targetName# was not voted guilty and #ownerName# spoke up for them at least once.",
+    "hintTarget": "Award if #targetName# was not voted guilty and #ownerName# spoke up for them at least once.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_family_pry",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "family"
+    ],
+    "link": "opposed",
+    "templateSource": "Family should not keep secrets. Get #targetName# to tell you one true thing they have been hiding from you.",
+    "templateTarget": "#targetName# is family, which is exactly why they cannot know your business. Tell them nothing true about yourself tonight.",
+    "hintSource": "Award if #targetName# admitted something real to #ownerName#.",
+    "hintTarget": "Award if #ownerName# gave #targetName# no real information about themselves all night.",
+    "pointsSource": 2,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_old_friends_back_up",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "old_friends"
+    ],
+    "link": "aligned",
+    "templateSource": "Old loyalties still count. The first time someone goes after #targetName# tonight, back them up in front of everyone.",
+    "templateTarget": "Old loyalties still count. The first time someone goes after #targetName# tonight, back them up in front of everyone.",
+    "hintSource": "Award if #ownerName# publicly defended #targetName# at least once.",
+    "hintTarget": "Award if #ownerName# publicly defended #targetName# at least once.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_old_friends_old_debt",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "old_friends"
+    ],
+    "link": "opposed",
+    "templateSource": "#targetName# still owes you from the old days. Get them to settle up tonight: eddies, a favor, or a public thank-you.",
+    "templateTarget": "#targetName# thinks you owe them for the old days. Leave tonight without paying them a single eddie or favor.",
+    "hintSource": "Award if #targetName# paid #ownerName# in any form.",
+    "hintTarget": "Award if #ownerName# gave #targetName# nothing.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_old_partners_blame",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "old_partners"
+    ],
+    "link": "opposed",
+    "templateSource": "The partnership ended badly. Get #targetName# to admit, in front of someone else, that the split was their fault.",
+    "templateTarget": "The partnership ended badly. Get #targetName# to admit, in front of someone else, that the split was their fault.",
+    "hintSource": "Award if #targetName# took the blame in front of a witness.",
+    "hintTarget": "Award if #targetName# took the blame in front of a witness.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_old_partners_one_more_job",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "old_partners"
+    ],
+    "link": "aligned",
+    "templateSource": "You and #targetName# were good together once. Close one deal tonight with a third guest, working as a team.",
+    "templateTarget": "You and #targetName# were good together once. Close one deal tonight with a third guest, working as a team.",
+    "hintSource": "Award if #ownerName# and #targetName# jointly struck any deal with another player.",
+    "hintTarget": "Award if #ownerName# and #targetName# jointly struck any deal with another player.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_acquaintance_dig",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "mutual_acquaintance"
+    ],
+    "link": "independent",
+    "templateSource": "You barely know #targetName#. Fix that: learn one thing about them tonight that they would not want repeated.",
+    "templateTarget": "You barely know #targetName#. Fix that: learn one thing about them tonight that they would not want repeated.",
+    "hintSource": "Award if #ownerName# can tell the GM one real secret or embarrassing fact about #targetName#.",
+    "hintTarget": "Award if #ownerName# can tell the GM one real secret or embarrassing fact about #targetName#.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_acquaintance_vouch",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "mutual_acquaintance"
+    ],
+    "link": "opposed",
+    "templateSource": "You need someone respectable in your corner. Get #targetName# to vouch for you in front of the group.",
+    "templateTarget": "#targetName# keeps dropping your name as if you were close. Do not vouch for them tonight, no matter how they ask.",
+    "hintSource": "Award if #targetName# publicly vouched for #ownerName#.",
+    "hintTarget": "Award if #ownerName# never vouched for #targetName#.",
+    "pointsSource": 2,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_employer_old_rate",
+    "category": "relationship",
+    "biasTags": [
+      "hires_labor",
+      "sells_labor"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "employer_employee"
+    ],
+    "link": "opposed",
+    "templateSource": "You have another job for #targetName#. Get them to agree to it tonight, at the old rate.",
+    "templateTarget": "#targetName# never paid what the last job was worth. Get what you are owed tonight, or refuse in public to ever work for them again.",
+    "hintSource": "Award if #targetName# agreed to work for #ownerName# again without a raise.",
+    "hintTarget": "Award if #ownerName# got paid by #targetName#, or publicly cut ties with them.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_employer_liability",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "employer_employee"
+    ],
+    "link": "aligned",
+    "templateSource": "#targetName# is your hire, and your liability. Make sure nobody pins tonight on them.",
+    "templateTarget": "#targetName# signs your checks. Make sure they walk out of here without cuffs on.",
+    "hintSource": "Award if #targetName# was not voted guilty and #ownerName# defended them at least once.",
+    "hintTarget": "Award if #targetName# was not voted guilty and #ownerName# defended them at least once.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_employer_side_work",
+    "category": "relationship",
+    "biasTags": [
+      "covert",
+      "broker"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "employer_employee"
+    ],
+    "link": "opposed",
+    "templateSource": "Find out who else #targetName# has been taking jobs from. You paid for loyalty and you want to know if you got it.",
+    "templateTarget": "Your other clients are none of #targetName#'s business. Do not let them learn who else you have worked for.",
+    "hintSource": "Award if #ownerName# learned the name of another of #targetName#'s clients.",
+    "hintTarget": "Award if #targetName# never learned who else #ownerName# works for.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_corrupt_hold_the_line",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "corrupt_arrangement"
+    ],
+    "link": "opposed",
+    "templateSource": "Your arrangement with #targetName# has to hold. Get them to confirm, privately, that they will keep looking the other way.",
+    "templateTarget": "You want out. End the arrangement with #targetName# tonight, and make them accept it.",
+    "hintSource": "Award if #targetName# agreed to keep the arrangement going.",
+    "hintTarget": "Award if #ownerName# ended the arrangement and #targetName# acknowledged it.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_corrupt_bigger_cut",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "corrupt_arrangement"
+    ],
+    "link": "opposed",
+    "templateSource": "#targetName# is getting expensive. Leave tonight paying them no more than you already do.",
+    "templateTarget": "Looking away just got riskier. Squeeze a bigger cut out of #targetName# before the night ends.",
+    "hintSource": "Award if #ownerName# did not agree to pay #targetName# more.",
+    "hintTarget": "Award if #targetName# agreed to pay #ownerName# more.",
+    "pointsSource": 1,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_corrupt_strangers",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "corrupt_arrangement"
+    ],
+    "link": "aligned",
+    "templateSource": "Nobody learns about the money between you and #targetName#. If anyone asks, you barely know each other.",
+    "templateTarget": "Nobody learns about the money between you and #targetName#. If anyone asks, you barely know each other.",
+    "hintSource": "Award if the arrangement between #ownerName# and #targetName# was never revealed to the group.",
+    "hintTarget": "Award if the arrangement between #ownerName# and #targetName# was never revealed to the group.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_mentor_cover",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "mentor_student"
+    ],
+    "link": "aligned",
+    "templateSource": "You taught #targetName# everything they know. Keep them out of the fallout tonight.",
+    "templateTarget": "You owe #targetName# your career. Defend them the first time someone accuses them.",
+    "hintSource": "Award if #ownerName# shielded #targetName# from suspicion at least once.",
+    "hintTarget": "Award if #ownerName# publicly defended #targetName# at least once.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  },
+  {
+    "id": "rel_mentor_outgrown",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "mentor_student"
+    ],
+    "link": "opposed",
+    "templateSource": "#targetName# still needs you, whether they admit it or not. Get them to ask for your advice in front of others.",
+    "templateTarget": "You have outgrown #targetName#. Contradict or overrule them in public at least once tonight.",
+    "hintSource": "Award if #targetName# openly asked #ownerName# for advice or help.",
+    "hintTarget": "Award if #ownerName# publicly contradicted #targetName# and did not back down.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_blackmail_collect",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "blackmails"
+    ],
+    "link": "opposed",
+    "templateSource": "Collect from #targetName# tonight: a payment, a favor, or a promise made in front of a witness.",
+    "templateTarget": "Get out from under #targetName#. Leave tonight having paid them nothing.",
+    "hintSource": "Award if #targetName# paid #ownerName# in any form.",
+    "hintTarget": "Award if #ownerName# gave #targetName# nothing all night.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_blackmail_quiet",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "blackmails"
+    ],
+    "link": "opposed",
+    "templateSource": "Your hold on #targetName# only works in the dark. Make sure the group never learns you are squeezing them.",
+    "templateTarget": "Turn the tables. Get someone else in this house to lean on #targetName# for you.",
+    "hintSource": "Award if the blackmail was never revealed to the group.",
+    "hintTarget": "Award if #ownerName# recruited another player against #targetName#.",
+    "pointsSource": 1,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_rivals_upstage",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "rivals"
+    ],
+    "link": "opposed",
+    "templateSource": "Come out of tonight looking better than #targetName#. Get at least one guest to side with you against them openly.",
+    "templateTarget": "Come out of tonight looking better than #targetName#. Get at least one guest to side with you against them openly.",
+    "hintSource": "Award if a third player openly took #ownerName#'s side against #targetName#.",
+    "hintTarget": "Award if a third player openly took #ownerName#'s side against #targetName#.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_rivals_back_down",
+    "category": "relationship",
+    "biasTags": [
+      "violent",
+      "authority"
+    ],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "rivals"
+    ],
+    "link": "opposed",
+    "templateSource": "Make #targetName# back down from you in public at least once tonight.",
+    "templateTarget": "Make #targetName# back down from you in public at least once tonight.",
+    "hintSource": "Award if #targetName# visibly conceded an argument or a standoff to #ownerName#.",
+    "hintTarget": "Award if #targetName# visibly conceded an argument or a standoff to #ownerName#.",
+    "pointsSource": 2,
+    "pointsTarget": 2
+  },
+  {
+    "id": "rel_rivals_what_they_wanted",
+    "category": "relationship",
+    "biasTags": [],
+    "roles": [],
+    "excludeRoles": [],
+    "requiresLifepath": {},
+    "boostLifepath": {},
+    "weight": 1.0,
+    "relTypes": [
+      "rivals"
+    ],
+    "link": "independent",
+    "templateSource": "#targetName# was not here for the canapes. Find out what they wanted from #victimName#.",
+    "templateTarget": "#targetName# was not here for the canapes. Find out what they wanted from #victimName#.",
+    "hintSource": "Award if #ownerName# can tell the GM #targetName#'s real connection to the victim.",
+    "hintTarget": "Award if #ownerName# can tell the GM #targetName#'s real connection to the victim.",
+    "pointsSource": 1,
+    "pointsTarget": 1
+  }
+]

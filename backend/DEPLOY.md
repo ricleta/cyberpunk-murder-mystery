@@ -17,6 +17,9 @@ This project consists of a Flask backend and a static HTML/JS frontend. It is de
    - In the console, export your environment variables if needed (e.g., `export FLASK_APP=backend.app:create_app`).
    - Run `flask db init` (if migrations not initialized), `flask db migrate`, `flask db upgrade` to create the SQLite file. (Note: in this specific Phase 1 code, we haven't strictly created the migrate scripts yet, so you can alternatively run a small script calling `db.create_all()` within the app context).
 
+   - **Upgrading an existing database** (e.g. to Phase 5, which adds the `objective` table): run `flask --app app db upgrade`. A brand-new database is created with `python init_db.py` and then marked current with `flask --app app db stamp head`; the migration chain cannot build a database from empty.
+   - **Template data**: `frontend/data/` is the source of truth. After changing any JSON there (including `frontend/data/objectives/`), run `python copy_data.py` from `backend/` and deploy both copies. The app validates secret and objective templates at startup and refuses to start if they are invalid.
+
 4. **Web App Configuration**:
    - Go to the "Web" tab. Add a new web app. Choose "Manual configuration" and select the Python version matching your virtual environment.
    - Under the **Virtualenv** section, enter the path to your env (e.g., `/home/yourusername/.virtualenvs/my-env`).

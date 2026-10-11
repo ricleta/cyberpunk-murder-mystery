@@ -58,7 +58,15 @@
         <div class="sheet-section">
             <h2>Objectives</h2>
             <div id="objectivesList"></div>
-            <button class="secondary-btn" onclick="addArrayItem('objectivesList', 'Objective text')">+ Add Objective</button>
+            <div class="objective-row" style="background: none; padding-left: 0; padding-right: 0;">
+                <input type="text" id="newObjectiveText" placeholder="New objective..." style="flex-grow: 1;">
+                <select id="newObjectivePoints">
+                    <option value="1">1 pt</option>
+                    <option value="2">2 pts</option>
+                    <option value="3">3 pts</option>
+                </select>
+                <button class="secondary-btn" id="addObjectiveBtn">+ Add Objective</button>
+            </div>
         </div>
     </div>
 
@@ -80,22 +88,134 @@
             setTimeout(() => alertBox.style.display='none', 3000);
         }
 
-        window.addArrayItem = (containerId, placeholder, value = '') => {
-            const container = document.getElementById(containerId);
-            const div = document.createElement('div');
-            div.className = 'list-item';
-            div.innerHTML = `
-                <input type="text" value="${value}" placeholder="${placeholder}" style="flex-grow: 1;">
-                <button class="secondary-btn" onclick="this.parentElement.remove()" style="width: auto;">X</button>
-            `;
-            container.appendChild(div);
-        };
+        // --- Objectives (Objective table, edited through the /objectives endpoints) ---
+        const objectivesUrl = `/sessions/${sessionId}/objectives`;
 
-        function getArrayValues(containerId) {
-            const container = document.getElementById(containerId);
-            const inputs = container.querySelectorAll('input');
-            return Array.from(inputs).map(i => i.value).filter(v => v.trim() !== '');
+        function pointsLabel(points) {
+            return `${points} ${points === 1 ? 'pt' : 'pts'}`;
         }
+
+        function pointsSelect(selected) {
+            const select = document.createElement('select');
+            [1, 2, 3].forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = pointsLabel(n);
+                opt.selected = n === selected;
+                select.appendChild(opt);
+            });
+            return select;
+        }
+
+        function smallButton(label, onClick) {
+            const btn = document.createElement('button');
+            btn.className = 'secondary-btn';
+            btn.textContent = label;
+            btn.addEventListener('click', onClick);
+            return btn;
+        }
+
+        function renderObjectiveRow(o) {
+            const row = document.createElement('div');
+            row.className = 'objective-row';
+
+            const badge = document.createElement('span');
+            badge.className = 'points-badge';
+            badge.textContent = pointsLabel(o.points);
+
+            const body = document.createElement('div');
+            body.className = 'objective-body';
+            body.textContent = o.text;
+            // gm_hint is only ever sent to the GM
+            if (o.gm_hint) {
+                const details = document.createElement('details');
+                details.className = 'objective-meta';
+                const summary = document.createElement('summary');
+                summary.textContent = 'GM hint';
+                details.appendChild(summary);
+                details.appendChild(document.createTextNode(o.gm_hint));
+                body.appendChild(details);
+            }
+
+            row.append(badge, body,
+                smallButton('Edit', () => row.replaceWith(renderObjectiveEditor(o))),
+                smallButton('X', () => deleteObjective(o)));
+            return row;
+        }
+
+        function renderObjectiveEditor(o) {
+            const row = document.createElement('div');
+            row.className = 'objective-row';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = o.text;
+            input.style.flexGrow = '1';
+            const select = pointsSelect(o.points);
+
+            row.append(input, select,
+                smallButton('Save', async () => {
+                    try {
+                        await apiFetch(`${objectivesUrl}/${o.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ text: input.value, points: parseInt(select.value, 10) })
+                        });
+                        await loadObjectives();
+                    } catch (err) {
+                        showAlert(err.message);
+                    }
+                }),
+                smallButton('Cancel', () => row.replaceWith(renderObjectiveRow(o))));
+            return row;
+        }
+
+        async function deleteObjective(o) {
+            if (!confirm('Delete this objective?')) return;
+            try {
+                await apiFetch(`${objectivesUrl}/${o.id}`, { method: 'DELETE' });
+                await loadObjectives();
+            } catch (err) {
+                showAlert(err.message);
+            }
+        }
+
+        async function loadObjectives() {
+            const container = document.getElementById('objectivesList');
+            try {
+                // Players always get only their own objectives; the filter is for the GM.
+                const data = await apiFetch(`${objectivesUrl}?character_id=${charId}`);
+                container.innerHTML = '';
+                if (data.objectives.length === 0) {
+                    container.innerHTML = '<p style="color: #999;">No objectives yet.</p>';
+                }
+                data.objectives.forEach(o => container.appendChild(renderObjectiveRow(o)));
+            } catch (e) {
+                console.error("Failed to load objectives:", e);
+            }
+        }
+
+        document.getElementById('addObjectiveBtn').addEventListener('click', async () => {
+            const textInput = document.getElementById('newObjectiveText');
+            const text = textInput.value.trim();
+            if (!text) {
+                showAlert('Enter the objective text first.');
+                return;
+            }
+            try {
+                await apiFetch(objectivesUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        character_id: charId,
+                        text,
+                        points: parseInt(document.getElementById('newObjectivePoints').value, 10)
+                    })
+                });
+                textInput.value = '';
+                await loadObjectives();
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
 
         async function loadData() {
             try {
@@ -130,7 +250,7 @@
                     p.style.borderRadius = '3px';
                     secContainer.appendChild(p);
                 });
-                (char.objectives || []).forEach(o => window.addArrayItem('objectivesList', 'Objective', typeof o === 'string' ? o : o.text));
+                await loadObjectives();
 
                 // Load generated relationships
                 try {
@@ -175,8 +295,7 @@
             const payload = {
                 display_name: document.getElementById('displayName').value,
                 description: document.getElementById('description').value,
-                traits: traitsArray,
-                objectives: getArrayValues('objectivesList')
+                traits: traitsArray
             };
 
             try {

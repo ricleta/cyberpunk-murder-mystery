@@ -46,7 +46,7 @@
             <p id="allReadyStatus">Loading status...</p>
             <ul id="readinessList" style="list-style: none; padding: 0;">
             </ul>
-            <button id="generateRelationshipsBtn" disabled style="margin-top: 15px; width: 100%;">Generate Relationships & Secrets</button>
+            <button id="generateRelationshipsBtn" disabled style="margin-top: 15px; width: 100%;">Generate Game</button>
         </div>
     </div>
 
@@ -232,21 +232,19 @@
         };
 
         window.generateRelationships = async () => {
-            if (!confirm("Are you sure you want to generate relationships? This will overwrite any existing connections.")) return;
+            if (!confirm("Generate relationships, secrets and objectives? This will overwrite anything already generated.")) return;
             const btn = document.getElementById('generateRelationshipsBtn');
             btn.disabled = true;
             btn.textContent = 'Generating...';
             try {
-                const res = await apiFetch(`/sessions/${sessionId}/generate-relationships`, { method: 'POST' });
-                btn.textContent = 'Generating secrets...';
-                await apiFetch(`/sessions/${sessionId}/generate-secrets`, { method: 'POST' });
-                showAlert(`Relationships and secrets generated — ${res.relationships.length} connections created!`);
-                btn.textContent = 'Regenerate Relationships & Secrets';
+                const res = await apiFetch(`/sessions/${sessionId}/generate?regenerate=true`, { method: 'POST' });
+                showAlert(`Game generated: ${res.relationships} connections, ${res.secrets} secrets, ${res.objectives} objectives.`);
+                btn.textContent = 'Regenerate Game';
                 btn.disabled = false;
             } catch (err) {
                 showAlert(err.message);
                 btn.disabled = false;
-                btn.textContent = 'Generate Relationships & Secrets';
+                btn.textContent = 'Generate Game';
             }
         };
 

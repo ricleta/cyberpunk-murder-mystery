@@ -62,7 +62,7 @@ def compute_role_affinity(role_a_key: str, role_b_key: str, role_tags: dict, tag
 def edge_exists(graph: nx.Graph, source_id: str, target_id: str) -> bool:
     return graph.has_edge(source_id, target_id)
 
-def build_relationship_graph(characters: list[Character], role_tags: dict, tag_affinity: dict) -> nx.Graph:
+def build_relationship_graph(characters: list[Character], role_tags: dict, tag_affinity: dict, rng=None) -> nx.Graph:
     """
     1. Create an nx.Graph with one node per character.
     2. Compute pairwise affinity for every possible character pair.
@@ -70,6 +70,7 @@ def build_relationship_graph(characters: list[Character], role_tags: dict, tag_a
     4. Degree augmentation pass (degree >= 2).
     5. Add flavor edges.
     """
+    rng = rng or random
     G = nx.Graph()
     for c in characters:
         G.add_node(c.id, role_key=c.role_key)
@@ -105,7 +106,7 @@ def build_relationship_graph(characters: list[Character], role_tags: dict, tag_a
             break
             
         weights = [c[2] for c in candidates]
-        chosen = random.choices(candidates, weights=weights, k=1)[0]
+        chosen = rng.choices(candidates, weights=weights, k=1)[0]
         tree.add_edge(chosen[0], chosen[1])
         tree.add_node(chosen[1])
         unconnected.remove(chosen[1])
@@ -123,7 +124,7 @@ def build_relationship_graph(characters: list[Character], role_tags: dict, tag_a
                 
                 if candidates:
                     weights = [c[1] for c in candidates]
-                    chosen_other = random.choices(candidates, weights=weights, k=1)[0][0]
+                    chosen_other = rng.choices(candidates, weights=weights, k=1)[0][0]
                     G.add_edge(n, chosen_other)
                     
     # 5. Flavor edges
@@ -139,7 +140,7 @@ def build_relationship_graph(characters: list[Character], role_tags: dict, tag_a
         
         while extra_edges_added < max_extra and possible_new_edges:
             weights = [c[2] for c in possible_new_edges]
-            chosen = random.choices(possible_new_edges, weights=weights, k=1)[0]
+            chosen = rng.choices(possible_new_edges, weights=weights, k=1)[0]
             G.add_edge(chosen[0], chosen[1])
             possible_new_edges.remove(chosen)
             extra_edges_added += 1
@@ -158,7 +159,8 @@ def verify_graph(graph: nx.Graph, characters: list[Character]) -> None:
     if len(characters) > 1 and not nx.is_connected(graph):
         raise ValueError("Graph is not fully connected")
 
-def assign_relationship_types(graph: nx.Graph, characters_by_id: dict, relationship_types: dict, role_tags: dict) -> list[dict]:
+def assign_relationship_types(graph: nx.Graph, characters_by_id: dict, relationship_types: dict, role_tags: dict, rng=None) -> list[dict]:
+    rng = rng or random
     edges_info = []
     
     universal_types = relationship_types.get("universal", [])
@@ -186,7 +188,7 @@ def assign_relationship_types(graph: nx.Graph, characters_by_id: dict, relations
                 candidates.append(rt)
                 weights.append(float(len(overlap)))
                 
-        chosen_type = random.choices(candidates, weights=weights, k=1)[0]
+        chosen_type = rng.choices(candidates, weights=weights, k=1)[0]
         
         edges_info.append({
             "source_id": u,
@@ -198,7 +200,8 @@ def assign_relationship_types(graph: nx.Graph, characters_by_id: dict, relations
         
     return edges_info
 
-def generate_relationship_text(rel_type_entry: dict, source_char: Character, target_char: Character) -> tuple[str, str]:
+def generate_relationship_text(rel_type_entry: dict, source_char: Character, target_char: Character, rng=None) -> tuple[str, str]:
+    rng = rng or random
     flavor_list = [
         "though you rarely speak of it",
         "a bond neither of you takes lightly",
@@ -210,7 +213,7 @@ def generate_relationship_text(rel_type_entry: dict, source_char: Character, tar
     source_name = source_char.display_name or "Unknown"
     target_name = target_char.display_name or "Unknown"
     # Pick flavor once so both sides of the same relationship read consistently
-    flavor = random.choice(flavor_list)
+    flavor = rng.choice(flavor_list)
 
     def render(template, about_name, other_name):
         # #targetName# always means "the other person" from the reader's perspective
@@ -240,7 +243,20 @@ def generate_relationship_text(rel_type_entry: dict, source_char: Character, tar
 
     return flattened_source, flattened_target
 
-def _generate_relationships(session) -> list[Relationship]:
+def verify_session_graph(session) -> None:
+    """Rebuilds the graph from the session's persisted Relationship rows and runs verify_graph."""
+    characters = Character.query.filter_by(session_id=session.id).all()
+    graph = nx.Graph()
+    for c in characters:
+        graph.add_node(c.id)
+    for r in Relationship.query.filter_by(session_id=session.id).all():
+        graph.add_edge(r.source_character_id, r.target_character_id)
+    verify_graph(graph, characters)
+
+def _generate_relationships(session, rng=None, commit=True) -> list[Relationship]:
+    """commit=False flushes instead of committing, so a caller (the Generate pipeline)
+    can run several generators inside one transaction."""
+    rng = rng or random
     characters = Character.query.filter_by(session_id=session.id).all()
     
     incomplete = [c.player_id for c in characters if not c.lifepath_complete or not c.role_key]
@@ -250,15 +266,18 @@ def _generate_relationships(session) -> list[Relationship]:
     existing = Relationship.query.filter_by(session_id=session.id).all()
     for r in existing:
         db.session.delete(r)
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
         
     role_tags, tag_affinity, relationship_types = load_generation_data()
     
-    graph = build_relationship_graph(characters, role_tags, tag_affinity)
+    graph = build_relationship_graph(characters, role_tags, tag_affinity, rng=rng)
     verify_graph(graph, characters)
     
     char_by_id = {c.id: c for c in characters}
-    edges_info = assign_relationship_types(graph, char_by_id, relationship_types, role_tags)
+    edges_info = assign_relationship_types(graph, char_by_id, relationship_types, role_tags, rng=rng)
     
     created_relationships = []
     
@@ -275,10 +294,10 @@ def _generate_relationships(session) -> list[Relationship]:
         if existing:
             continue
             
-        desc_source, desc_target = generate_relationship_text(edge["chosen_type_data"], source_char, target_char)
+        desc_source, desc_target = generate_relationship_text(edge["chosen_type_data"], source_char, target_char, rng=rng)
         
         # Randomize direction for asymmetric relationships
-        if not edge["is_symmetric"] and random.choice([True, False]):
+        if not edge["is_symmetric"] and rng.choice([True, False]):
             # Swap source and target
             source_char, target_char = target_char, source_char
             desc_source, desc_target = desc_target, desc_source
@@ -294,6 +313,9 @@ def _generate_relationships(session) -> list[Relationship]:
         )
         db.session.add(rel)
         created_relationships.append(rel)
-        
-    db.session.commit()
+
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return created_relationships

@@ -11,6 +11,11 @@
         th { background-color: var(--panel-bg); color: var(--primary-color); }
         .edit-link { color: var(--secondary-color); text-decoration: none; }
         .edit-link:hover { text-decoration: underline; }
+        .generate-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .generate-bar h2, .generate-bar p, .generate-bar button { margin-bottom: 0; }
+        .generate-bar button { width: auto; }
+        .character-panel h3 { margin-bottom: 10px; }
+        .character-panel .role { color: var(--secondary-color); font-size: 0.85rem; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -19,8 +24,16 @@
             <h1>Master Character List</h1>
             <a href="#" id="backLink" style="color: var(--primary-color);">Back to Lobby</a>
         </div>
-        
+
         <div id="alertBox" class="alert"></div>
+
+        <div class="panel generate-bar">
+            <div>
+                <h2>Game Generation</h2>
+                <p id="generateStatus" style="color: #999;">Loading...</p>
+            </div>
+            <button id="generateBtn" disabled>Generate</button>
+        </div>
 
         <div class="panel">
             <table>
@@ -38,6 +51,9 @@
                 </tbody>
             </table>
         </div>
+
+        <h2>Objectives</h2>
+        <div id="objectivePanels"></div>
     </div>
 
     <script type="module">
@@ -54,16 +70,19 @@
             alertBox.style.display = 'block';
         }
 
+        let characters = [];
+        let hasGenerated = false;
+
         async function loadData() {
             try {
                 const data = await apiFetch(`/sessions/${sessionId}/characters`);
                 const chars = data.characters;
+                characters = chars;
                 const tbody = document.getElementById('charTableBody');
                 tbody.innerHTML = '';
-                
+
                 if (chars.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5">No characters created yet.</td></tr>';
-                    return;
                 }
 
                 chars.forEach(c => {
@@ -76,17 +95,121 @@
                             <input type="checkbox" onchange="toggleKiller('${c.id}', this.checked)" ${c.is_killer ? 'checked' : ''}>
                         </td>
                         <td>
-                            <a href="build.html?session=${sessionId}&char=${c.id}" class="edit-link">Edit Lifepath</a> | 
+                            <a href="build.html?session=${sessionId}&char=${c.id}" class="edit-link">Edit Lifepath</a> |
                             <a href="character.html?session=${sessionId}&char=${c.id}" class="edit-link">View Sheet</a>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
 
+                await loadGenerated();
+
             } catch (err) {
                 showAlert(err.message);
             }
         }
+
+        // --- Generation state + per-character objective panels ---
+        async function loadGenerated() {
+            const [session, relData, objData] = await Promise.all([
+                apiFetch(`/sessions/${sessionId}`),
+                apiFetch(`/sessions/${sessionId}/relationships`),
+                apiFetch(`/sessions/${sessionId}/objectives`)
+            ]);
+            const objectives = objData.objectives;
+            hasGenerated = relData.relationships.length > 0 || objectives.length > 0;
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = false;
+            btn.textContent = hasGenerated ? 'Regenerate' : 'Generate';
+            document.getElementById('generateStatus').textContent = hasGenerated
+                ? `Status: ${session.status}. ${relData.relationships.length} relationships, ${objectives.length} objectives.`
+                : `Status: ${session.status}. Nothing generated yet. Generate builds relationships, secrets and objectives in one step.`;
+
+            renderObjectivePanels(objectives);
+        }
+
+        function el(tag, className, text) {
+            const node = document.createElement(tag);
+            if (className) node.className = className;
+            if (text !== undefined) node.textContent = text;
+            return node;
+        }
+
+        function shorten(text) {
+            return text.length > 90 ? text.substring(0, 87) + '...' : text;
+        }
+
+        function renderObjectivePanels(objectives) {
+            const container = document.getElementById('objectivePanels');
+            container.innerHTML = '';
+            if (objectives.length === 0) {
+                container.appendChild(el('p', null, 'No objectives generated yet.')).style.color = '#999';
+                return;
+            }
+            const byId = Object.fromEntries(objectives.map(o => [o.id, o]));
+
+            characters.forEach(c => {
+                const mine = objectives.filter(o => o.character_id === c.id);
+                const total = mine.reduce((sum, o) => sum + o.points, 0);
+
+                const panel = el('div', 'panel character-panel');
+                const title = el('h3', null, c.display_name || 'Unnamed');
+                title.appendChild(el('span', 'role', `${(c.role_key || '').toUpperCase()} · ${total} pts`));
+                if (c.is_killer) title.appendChild(el('span', 'killer-badge', 'Killer'));
+                panel.appendChild(title);
+
+                if (mine.length === 0) {
+                    panel.appendChild(el('p', 'objective-meta', 'No objectives.'));
+                }
+
+                mine.forEach(o => {
+                    const row = el('div', 'objective-row');
+                    row.appendChild(el('span', 'points-badge', `${o.points} ${o.points === 1 ? 'pt' : 'pts'}`));
+
+                    const body = el('div', 'objective-body');
+                    body.appendChild(el('div', null, o.text));
+
+                    const partner = byId[o.linked_objective_id];
+                    if (partner) {
+                        const verb = o.link_type === 'opposed' ? 'opposes' : 'aligned with';
+                        body.appendChild(el('div', 'objective-meta',
+                            `↔ ${verb} ${partner.character_name || 'Unknown'}'s '${shorten(partner.text)}'`));
+                    }
+                    if (o.kind === 'frame') {
+                        body.appendChild(el('div', 'objective-meta', `Scapegoat: ${o.subject_name || 'Unknown'}`));
+                    }
+                    if (o.gm_hint) {
+                        const details = el('details', 'objective-meta');
+                        details.appendChild(el('summary', null, 'GM hint'));
+                        details.appendChild(document.createTextNode(o.gm_hint));
+                        body.appendChild(details);
+                    }
+
+                    row.appendChild(body);
+                    row.appendChild(el('span', 'objective-meta', o.kind.replace('_', ' ')));
+                    panel.appendChild(row);
+                });
+                container.appendChild(panel);
+            });
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (hasGenerated && !confirm('Regenerate the game? This replaces all relationships, secrets and objectives, including any manual edits.')) return;
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            alertBox.style.display = 'none';
+            try {
+                const res = await apiFetch(`/sessions/${sessionId}/generate${hasGenerated ? '?regenerate=true' : ''}`, { method: 'POST' });
+                showAlert(`Game generated: ${res.relationships} relationships, ${res.secrets} secrets, ${res.objectives} objectives.`);
+                await loadData();
+            } catch (err) {
+                showAlert(err.message);
+                btn.disabled = false;
+                btn.textContent = hasGenerated ? 'Regenerate' : 'Generate';
+            }
+        });
 
         window.toggleKiller = async (charId, isKiller) => {
             try {
@@ -94,6 +217,7 @@
                     method: 'PATCH',
                     body: JSON.stringify({ is_killer: isKiller })
                 });
+                await loadData(); // keep the killer badge in sync
             } catch (err) {
                 showAlert(err.message);
                 loadData(); // revert UI on fail

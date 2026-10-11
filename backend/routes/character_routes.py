@@ -69,6 +69,13 @@ def get_character_secrets(character):
                        'about_self': False, 'how_learned': k.how_learned})
     return result
 
+def get_objectives_for(character):
+    """Objectives live in the Objective table (Phase 5), not in the deprecated
+    Character.objectives JSON column. gm_hint and link fields are GM-only."""
+    from routes.session_routes import get_character_objectives
+    session = Session.query.get(character.session_id)
+    return get_character_objectives(character, bool(session and is_session_gm(g.current_user_id, session)))
+
 bp = Blueprint('characters', __name__)
 
 @bp.route('/<session_id>/characters', methods=['POST'])
@@ -151,7 +158,7 @@ def get_my_character(session_id):
         'description': character.description,
         'traits': character.traits,
         'secrets': get_character_secrets(character),
-        'objectives': character.objectives,
+        'objectives': get_objectives_for(character),
         'is_killer': character.is_killer,
         'cultural_origin': character.cultural_origin,
         'personality': character.personality,
@@ -194,7 +201,7 @@ def get_character(session_id, character_id):
         'description': character.description,
         'traits': character.traits,
         'secrets': get_character_secrets(character),
-        'objectives': character.objectives,
+        'objectives': get_objectives_for(character),
         'is_killer': character.is_killer,
         'cultural_origin': character.cultural_origin,
         'personality': character.personality,
@@ -239,8 +246,7 @@ def update_character(session_id, character_id):
     if 'traits' in data:
         character.traits = data['traits']
     # 'secrets' is no longer a Character column; secrets are generated in Phase 4.
-    if 'objectives' in data:
-        character.objectives = data['objectives']
+    # 'objectives' is no longer accepted here; use the /objectives endpoints (Phase 5).
         
     # Role Key (editable by GM and Player now)
     if 'role_key' in data:

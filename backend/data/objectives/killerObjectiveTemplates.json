@@ -1,0 +1,110 @@
+{
+  "hide_evidence": [
+    {
+      "id": "hide_vial",
+      "category": "hide_evidence",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Make sure the vial is never found on you. If anyone searches you or your things, they come up empty.",
+      "templateHint": "#ownerName# is the killer. Award if the poison was never found on them or traced to them.",
+      "points": 2
+    },
+    {
+      "id": "hide_method",
+      "category": "hide_evidence",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Nobody connects you to the poison. End the night without a single guest able to say how it reached #victimName#'s glass.",
+      "templateHint": "#ownerName# is the killer. Award if no player correctly explained how #ownerName# delivered the poison.",
+      "points": 2
+    },
+    {
+      "id": "hide_alibi",
+      "category": "hide_evidence",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Account for your time. Have a story for every minute around #victimName#'s death, and get at least one guest to repeat it for you.",
+      "templateHint": "#ownerName# is the killer. Award if another player vouched for #ownerName#'s alibi.",
+      "points": 2
+    },
+    {
+      "id": "hide_witnesses",
+      "category": "hide_evidence",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "You were not as careful as you thought. Find out who noticed something about you tonight, without tipping your hand, and keep them from putting it together.",
+      "templateHint": "#ownerName# is the killer. Award if the trail facts held by other players were never combined in front of the group.",
+      "points": 2
+    }
+  ],
+  "frame": [
+    {
+      "id": "frame_steer",
+      "category": "frame",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Steer the group's suspicion toward #targetName#. They should be the one voted guilty.",
+      "templateHint": "#ownerName# is the killer and is framing #targetName#. Award if #targetName# was voted guilty.",
+      "points": 3
+    },
+    {
+      "id": "frame_motive",
+      "category": "frame",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "#targetName# had every reason to want #victimName# dead. Make sure the room knows it, and that the final vote lands on them.",
+      "templateHint": "#ownerName# is the killer and is framing #targetName#. Award if #targetName# was voted guilty.",
+      "points": 3
+    },
+    {
+      "id": "frame_plant",
+      "category": "frame",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Put the poison on #targetName#: plant the idea, the motive, or the vial itself. They take the fall tonight.",
+      "templateHint": "#ownerName# is the killer and is framing #targetName#. Award if #targetName# was voted guilty.",
+      "points": 3
+    },
+    {
+      "id": "frame_whisper",
+      "category": "frame",
+      "biasTags": [],
+      "roles": [],
+      "excludeRoles": [],
+      "requiresLifepath": {},
+      "boostLifepath": {},
+      "weight": 1.0,
+      "templateText": "Let #targetName# hang for this. Feed their motive to the loudest guest in the room and let the vote do the rest.",
+      "templateHint": "#ownerName# is the killer and is framing #targetName#. Award if #targetName# was voted guilty.",
+      "points": 3
+    }
+  ]
+}

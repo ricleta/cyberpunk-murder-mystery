@@ -38,8 +38,11 @@ class Character(db.Model):
     display_name = db.Column(db.String, nullable=True)
     description = db.Column(db.Text, default='')
     traits = db.Column(db.JSON, default=list)
+    # DEPRECATED (Phase 5): objectives now live in the Objective table. This column is no
+    # longer read or written. It is left in place because dropping columns on SQLite is
+    # risky; the drop is scheduled for Phase 6 cleanup.
     objectives = db.Column(db.JSON, default=list)
-    
+
     # Shared Lifepath fields
     cultural_origin = db.Column(db.String, nullable=True)
     personality = db.Column(db.String, nullable=True)
@@ -124,4 +127,32 @@ class SecretKnowledge(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint('secret_id', 'knower_character_id', name='unique_secret_knowledge'),
+    )
+
+class Objective(db.Model):
+    id = db.Column(db.String, primary_key=True, default=generate_uuid)
+    session_id = db.Column(db.String, db.ForeignKey('session.id'), nullable=False)
+    character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=False)  # owner
+    template_id = db.Column(db.String, nullable=True)  # null for manually added rows
+    kind = db.Column(db.String, nullable=False)
+    points = db.Column(db.Integer, nullable=False)  # 1-3
+    text = db.Column(db.Text, nullable=False)  # what the player sees (snapshot, not re-rendered)
+    gm_hint = db.Column(db.Text, nullable=True)  # GM-only: "counts as done when..."
+    related_character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=True)
+    related_secret_id = db.Column(db.String, db.ForeignKey('secret.id'), nullable=True)
+    related_relationship_id = db.Column(db.String, db.ForeignKey('relationship.id'), nullable=True)
+    linked_objective_id = db.Column(db.String, db.ForeignKey('objective.id'), nullable=True)  # opposing/aligned partner
+    link_type = db.Column(db.String, nullable=True)  # 'opposed' | 'aligned'
+    sort_order = db.Column(db.Integer, default=0)  # higher points first, then stable
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "kind IN ('protect_secret', 'exploit_secret', 'relationship', 'flavor', 'find_killer', 'hide_evidence', 'frame', 'manual')",
+            name='valid_objective_kind'),
+        db.CheckConstraint('points >= 1 AND points <= 3', name='valid_objective_points'),
+        db.CheckConstraint("link_type IS NULL OR link_type IN ('opposed', 'aligned')", name='valid_objective_link_type'),
+        db.Index('idx_objective_session', 'session_id'),
+        db.Index('idx_objective_character', 'character_id'),
     )

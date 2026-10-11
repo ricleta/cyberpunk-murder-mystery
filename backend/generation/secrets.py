@@ -41,7 +41,9 @@ _secrets_report_cache = {}
 def get_session_report(session_id):
     return _secrets_report_cache.get(session_id)
 
-def _generate_secrets(session, rng=None):
+def _generate_secrets(session, rng=None, commit=True):
+    """commit=False flushes instead of committing (including the auto-assigned killer
+    flag), so the Generate pipeline can roll the whole run back."""
     if rng is None:
         rng = random.Random()
 
@@ -70,7 +72,10 @@ def _generate_secrets(session, rng=None):
     else:
         killer = rng.choice(characters)
         killer.is_killer = True
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         
     base_dir = get_base_data_dir()
     with open(os.path.join(base_dir, 'roleTags.json'), 'r', encoding='utf-8') as f:
@@ -399,7 +404,10 @@ def _generate_secrets(session, rng=None):
             chosen_knower = char_by_id[chosen_knower_id]
             record_knowledge(chosen_s, chosen_knower)
 
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
 
     # Cache report trace for dev reporting (§8)
     _secrets_report_cache[session.id] = {

@@ -192,6 +192,61 @@ def get_valid_lifepath_options(data_dir=None):
 
     return valid_options, synonym_map
 
+def load_template_validation_context(data_dir=None):
+    """Lookups shared by every template validator: valid role keys, valid Lifepath
+    option values per field, and the real Character column names."""
+    if not data_dir:
+        data_dir = get_base_data_dir()
+
+    with open(os.path.join(data_dir, 'roles.json'), 'r', encoding='utf-8') as f:
+        roles_data = json.load(f)
+    valid_role_keys = {r['key'] for r in roles_data}
+
+    valid_lifepath_options, _ = get_valid_lifepath_options(data_dir)
+
+    # Real character lifepath fields
+    from models import Character
+    character_cols = {col.name for col in Character.__table__.columns}
+
+    return valid_role_keys, valid_lifepath_options, character_cols
+
+def validate_template_gates(t, file_name, valid_role_keys, valid_lifepath_options, character_cols):
+    """Validates the gate fields shared by secret and objective templates:
+    roles / excludeRoles and requiresLifepath / boostLifepath."""
+    t_id = t.get("id")
+
+    # Roles validation
+    for r in t.get("roles", []):
+        if r not in valid_role_keys:
+            raise ValueError(f"Template '{t_id}' in {file_name} has invalid role_key in 'roles': '{r}'")
+    for r in t.get("excludeRoles", []):
+        if r not in valid_role_keys:
+            raise ValueError(f"Template '{t_id}' in {file_name} has invalid role_key in 'excludeRoles': '{r}'")
+
+    # Lifepath hooks validation
+    req_lp = t.get("requiresLifepath", {}) or {}
+    boost_lp = t.get("boostLifepath", {}) or {}
+
+    for fld, allowed_vals in req_lp.items():
+        if fld not in character_cols and fld not in valid_lifepath_options:
+            raise ValueError(f"Template '{t_id}' in {file_name} has invalid Lifepath field in requiresLifepath: '{fld}'")
+        if fld not in valid_lifepath_options:
+            raise ValueError(f"Lifepath field '{fld}' in requiresLifepath of '{t_id}' has no options table in Lifepath data")
+        if isinstance(allowed_vals, str):
+            allowed_vals = [allowed_vals]
+        for v in allowed_vals:
+            if v not in valid_lifepath_options[fld]:
+                raise ValueError(f"Template '{t_id}' requiresLifepath value '{v}' for field '{fld}' does not exist in Lifepath JSON tables")
+
+    for fld, val_map in boost_lp.items():
+        if fld not in character_cols and fld not in valid_lifepath_options:
+            raise ValueError(f"Template '{t_id}' in {file_name} has invalid Lifepath field in boostLifepath: '{fld}'")
+        if fld not in valid_lifepath_options:
+            raise ValueError(f"Lifepath field '{fld}' in boostLifepath of '{t_id}' has no options table in Lifepath data")
+        for v in val_map.keys():
+            if v not in valid_lifepath_options[fld]:
+                raise ValueError(f"Template '{t_id}' boostLifepath value '{v}' for field '{fld}' does not exist in Lifepath JSON tables")
+
 def validate_secret_templates(data_dir=None):
     """
     Load-time validation: fail loudly at app startup.
@@ -204,15 +259,7 @@ def validate_secret_templates(data_dir=None):
     if not data_dir:
         data_dir = get_base_data_dir()
 
-    with open(os.path.join(data_dir, 'roles.json'), 'r', encoding='utf-8') as f:
-        roles_data = json.load(f)
-    valid_role_keys = {r['key'] for r in roles_data}
-
-    valid_lifepath_options, synonym_map = get_valid_lifepath_options(data_dir)
-
-    # Real character lifepath fields
-    from models import Character
-    character_cols = {col.name for col in Character.__table__.columns}
+    valid_role_keys, valid_lifepath_options, character_cols = load_template_validation_context(data_dir)
 
     pools = load_all_secret_templates(data_dir)
     seen_ids = set()
@@ -253,37 +300,8 @@ def validate_secret_templates(data_dir=None):
             file_ids.add(t_id)
             seen_ids.add(t_id)
 
-            # 2. Roles validation
-            for r in t.get("roles", []):
-                if r not in valid_role_keys:
-                    raise ValueError(f"Template '{t_id}' in {file_name} has invalid role_key in 'roles': '{r}'")
-            for r in t.get("excludeRoles", []):
-                if r not in valid_role_keys:
-                    raise ValueError(f"Template '{t_id}' in {file_name} has invalid role_key in 'excludeRoles': '{r}'")
-
-            # 3. Lifepath hooks validation
-            req_lp = t.get("requiresLifepath", {}) or {}
-            boost_lp = t.get("boostLifepath", {}) or {}
-
-            for fld, allowed_vals in req_lp.items():
-                if fld not in character_cols and fld not in valid_lifepath_options:
-                    raise ValueError(f"Template '{t_id}' in {file_name} has invalid Lifepath field in requiresLifepath: '{fld}'")
-                if fld not in valid_lifepath_options:
-                    raise ValueError(f"Lifepath field '{fld}' in requiresLifepath of '{t_id}' has no options table in Lifepath data")
-                if isinstance(allowed_vals, str):
-                    allowed_vals = [allowed_vals]
-                for v in allowed_vals:
-                    if v not in valid_lifepath_options[fld]:
-                        raise ValueError(f"Template '{t_id}' requiresLifepath value '{v}' for field '{fld}' does not exist in Lifepath JSON tables")
-
-            for fld, val_map in boost_lp.items():
-                if fld not in character_cols and fld not in valid_lifepath_options:
-                    raise ValueError(f"Template '{t_id}' in {file_name} has invalid Lifepath field in boostLifepath: '{fld}'")
-                if fld not in valid_lifepath_options:
-                    raise ValueError(f"Lifepath field '{fld}' in boostLifepath of '{t_id}' has no options table in Lifepath data")
-                for v in val_map.keys():
-                    if v not in valid_lifepath_options[fld]:
-                        raise ValueError(f"Template '{t_id}' boostLifepath value '{v}' for field '{fld}' does not exist in Lifepath JSON tables")
+            # 2-3. Roles and Lifepath hooks validation
+            validate_template_gates(t, file_name, valid_role_keys, valid_lifepath_options, character_cols)
 
             # 4. Dummy render validation
             t_sub = t.get("templateSubject")

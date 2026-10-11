@@ -105,3 +105,62 @@ button:hover {
     color: #fff;
     display: none;
 }
+
+/* Objectives (Phase 5) */
+.objective-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.objective-row .objective-body {
+    flex-grow: 1;
+}
+
+.objective-row input,
+.objective-row select,
+.objective-row button {
+    margin-bottom: 0;
+}
+
+.objective-row select,
+.objective-row button {
+    width: auto;
+}
+
+.points-badge {
+    flex-shrink: 0;
+    min-width: 3.2em;
+    padding: 2px 6px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.objective-meta {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.objective-meta summary {
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+
+.killer-badge {
+    margin-left: 10px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    background-color: var(--accent-color);
+}
