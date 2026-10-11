@@ -10,7 +10,10 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     cors.init_app(app) # For production we will restrict this to specific origins
 
-    # Register Blueprints
+    # Validate secret templates at startup (fail loudly)
+    from generation.secret_templates import validate_secret_templates
+    with app.app_context():
+        validate_secret_templates()
     from routes.auth_routes import bp as auth_bp
     from routes.session_routes import bp as session_bp
     from routes.character_routes import bp as character_bp

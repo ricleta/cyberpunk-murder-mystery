@@ -1,5 +1,7 @@
 {
   "id": "arasaka_soiree_v1",
+  "victim_name": "Director Kessler Voss",
+  "victim_title": "Arasaka Executive",
   "victim": {
     "name": "Director Kessler Voss",
     "roleInWorld": "Arasaka Executive",
@@ -9,5 +11,12 @@
   "setting": {
     "locationName": "The Voss Estate, Westbrook",
     "eventDescription": "An exclusive gala hosted by Voss to announce a major new cyberware contract. Only the elite and their trusted entourage were invited."
-  }
+  },
+  "locations": [
+    "the VIP lounge",
+    "the penthouse balcony",
+    "the private server room",
+    "the garden pavilion",
+    "the master study"
+  ]
 }

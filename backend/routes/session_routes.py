@@ -383,6 +383,7 @@ def get_secrets(session_id):
             sk_list = [k for k in knowledge if k.secret_id == s.id]
             result.append({
                 'id': s.id,
+                'template_id': s.template_id,
                 'subject_character_id': s.subject_character_id,
                 'subject_name': char_map.get(s.subject_character_id),
                 'kind': s.kind,
@@ -404,6 +405,7 @@ def get_secrets(session_id):
         if s.subject_character_id == my_char.id:
             result.append({
                 'id': s.id,
+                'template_id': s.template_id,
                 'subject_character_id': s.subject_character_id,
                 'subject_name': char_map.get(s.subject_character_id),
                 'kind': s.kind,
@@ -421,6 +423,7 @@ def get_secrets(session_id):
         if my_knowledge:
             result.append({
                 'id': s.id,
+                'template_id': s.template_id,
                 'subject_character_id': s.subject_character_id,
                 'subject_name': char_map.get(s.subject_character_id),
                 'kind': s.kind,
@@ -431,3 +434,69 @@ def get_secrets(session_id):
             })
 
     return jsonify({'secrets': result}), 200
+
+@bp.route('/<session_id>/secrets/report', methods=['GET'])
+@require_auth
+def get_secrets_report(session_id):
+    from flask import current_app
+    if not current_app.config.get('DEBUG'):
+        return jsonify({'error': 'Not found'}), 404
+
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    if not is_session_gm(g.current_user_id, session):
+        return jsonify({'error': 'Only GM can view secrets report'}), 403
+
+    from generation.secrets import get_session_report
+    from generation.secret_templates import load_all_secret_templates
+    characters = Character.query.filter_by(session_id=session_id).all()
+    cached = get_session_report(session_id)
+
+    if cached:
+        char_reports = {}
+        for c in characters:
+            char_reports[c.id] = {
+                'character_id': c.id,
+                'display_name': c.display_name,
+                'role_key': c.role_key,
+                'secrets': []
+            }
+        for entry in cached.get('characters', []):
+            cid = entry['character_id']
+            if cid in char_reports:
+                char_reports[cid]['secrets'].append({
+                    'kind': entry['kind'],
+                    'template_id': entry['template_id'],
+                    'category': entry['category'],
+                    'pool': entry['pool'],
+                    'is_relaxed': entry['is_relaxed'],
+                    'final_weight': entry['selection_weight']
+                })
+        return jsonify({'characters': list(char_reports.values()), 'relaxed': cached.get('relaxed', [])}), 200
+
+    # Fallback if cache is absent
+    pools = load_all_secret_templates()
+    secrets = Secret.query.filter_by(session_id=session_id).all()
+    char_reports = {}
+    for c in characters:
+        char_reports[c.id] = {
+            'character_id': c.id,
+            'display_name': c.display_name,
+            'role_key': c.role_key,
+            'secrets': []
+        }
+    for s in secrets:
+        cid = s.subject_character_id
+        if cid in char_reports:
+            pool = pools['template_pool_source'].get(s.template_id, 'universal')
+            char_reports[cid]['secrets'].append({
+                'kind': s.kind,
+                'template_id': s.template_id,
+                'category': s.category,
+                'pool': pool,
+                'is_relaxed': False,
+                'final_weight': 1.0
+            })
+    return jsonify({'characters': list(char_reports.values()), 'relaxed': []}), 200

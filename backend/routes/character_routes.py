@@ -58,14 +58,14 @@ def get_character_secrets(character):
     plus ones they know about others (text_knower)."""
     result = []
     for s in Secret.query.filter_by(subject_character_id=character.id).all():
-        result.append({'id': s.id, 'kind': s.kind, 'text': s.text_subject, 'about_self': True})
+        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind, 'text': s.text_subject, 'about_self': True})
     known = db.session.query(Secret, SecretKnowledge).join(
         SecretKnowledge, SecretKnowledge.secret_id == Secret.id
     ).filter(SecretKnowledge.knower_character_id == character.id).all()
     for s, k in known:
         if s.subject_character_id == character.id:
             continue
-        result.append({'id': s.id, 'kind': s.kind, 'text': s.text_knower or s.text_subject,
+        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind, 'text': s.text_knower or s.text_subject,
                        'about_self': False, 'how_learned': k.how_learned})
     return result
 

@@ -96,6 +96,7 @@ class Secret(db.Model):
     id = db.Column(db.String, primary_key=True, default=generate_uuid)
     session_id = db.Column(db.String, db.ForeignKey('session.id'), nullable=False)
     subject_character_id = db.Column(db.String, db.ForeignKey('character.id'), nullable=False)
+    template_id = db.Column(db.String, nullable=False)  # id of the template this secret was rendered from
     kind = db.Column(db.String, nullable=False)  # 'victim_tie' | 'self' | 'lie' | 'observation'
     category = db.Column(db.String, nullable=False)  # free-form
     severity = db.Column(db.Integer, nullable=False)  # 1-3
@@ -111,6 +112,7 @@ class Secret(db.Model):
 
     __table_args__ = (
         db.CheckConstraint("kind IN ('victim_tie', 'self', 'lie', 'observation')", name='valid_secret_kind'),
+        db.UniqueConstraint('session_id', 'subject_character_id', 'template_id', name='unique_secret_template_per_subject'),
     )
 
 class SecretKnowledge(db.Model):
