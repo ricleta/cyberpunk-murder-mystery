@@ -3,6 +3,7 @@ from extensions import db
 from models import Session, Character, Relationship, Secret, SecretKnowledge, Objective
 from auth import require_auth, is_session_gm
 from services import validation
+from services.master import build_master
 from generation.name_tokens import resolve_names, session_name_map
 from services.serializers import (
     serialize_objective, serialize_relationship,
@@ -223,3 +224,15 @@ def delete_objective(session_id, objective_id):
     db.session.commit()
 
     return jsonify({'message': 'Objective deleted'}), 200
+
+
+@bp.route('/<session_id>/master', methods=['GET'])
+@require_auth
+def get_master_sheet(session_id):
+    """Read-only overview of the whole session for the GM."""
+    session = Session.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+    if not is_session_gm(g.current_user_id, session):
+        return jsonify({'error': 'Only the GM can view the master sheet'}), 403
+    return jsonify(build_master(session)), 200
