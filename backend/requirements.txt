@@ -1,9 +1,13 @@
+# Runtime dependencies only. Dev/test tools live in requirements-dev.txt.
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
 Flask-Cors==4.0.0
 PyJWT==2.8.0
 werkzeug==3.0.1
-pytest==7.4.3
 networkx==3.1
-tracery
+# tracery 0.1.1 is source-only on PyPI (no wheel) and builds through a legacy setup.py,
+# so pip needs setuptools available at build time. If the install fails with
+# "No module named setuptools" / "invalid command bdist_wheel", run:
+#   pip install --upgrade pip setuptools wheel
+tracery==0.1.1

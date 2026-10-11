@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==7.4.3
+# Browser smoke test (tests/e2e). After installing run: playwright install chromium
+playwright>=1.40
