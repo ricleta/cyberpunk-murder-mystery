@@ -682,7 +682,7 @@ def test_pipeline_failure_in_objectives_stage_persists_nothing(client, app, gene
 
         def boom(*args, **kwargs):
             raise ValueError("forced objectives failure")
-        monkeypatch.setattr("generation.objectives._generate_objectives", boom)
+        monkeypatch.setattr("routes.generation_routes._generate_objectives", boom)
 
         res = client.post(f'/api/sessions/{session.id}/generate', headers=gm)
         assert res.status_code == 400
@@ -700,7 +700,7 @@ def test_pipeline_unexpected_error_is_500_and_rolls_back(client, app, generate_t
 
         def boom(*args, **kwargs):
             raise RuntimeError("unexpected")
-        monkeypatch.setattr("generation.objectives._generate_objectives", boom)
+        monkeypatch.setattr("routes.generation_routes._generate_objectives", boom)
 
         res = client.post(f'/api/sessions/{session.id}/generate', headers=auth(generate_token(session.gm_id)))
         assert res.status_code == 500
@@ -719,7 +719,7 @@ def test_pipeline_failed_regenerate_keeps_previous_game(client, app, generate_to
 
         def boom(*args, **kwargs):
             raise ValueError("forced objectives failure")
-        monkeypatch.setattr("generation.objectives._generate_objectives", boom)
+        monkeypatch.setattr("routes.generation_routes._generate_objectives", boom)
 
         assert client.post(f'/api/sessions/{session.id}/generate?regenerate=true', headers=gm).status_code == 400
         db.session.expire_all()

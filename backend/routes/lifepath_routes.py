@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from routes.character_routes import load_lifepath_data
+from services.lifepath_data import load_lifepath_data
 
 bp = Blueprint('lifepath', __name__)
 

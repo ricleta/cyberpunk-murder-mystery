@@ -35,10 +35,6 @@ def require_auth(f):
 def is_session_gm(user_id, session):
     return session.gm_id == user_id
 
-def is_session_member(user_id, session_members):
-    # session_members should be a list of SessionMember objects
-    return any(member.user_id == user_id for member in session_members)
-
 def can_view_character(user_id, character):
     if character.player_id == user_id:
         return True

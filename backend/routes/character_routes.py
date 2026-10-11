@@ -1,80 +1,10 @@
 from flask import Blueprint, request, jsonify, g
 from extensions import db
-from models import Session, Character, User, Secret, SecretKnowledge
+from models import Session, SessionMember, Character
 from auth import require_auth, is_session_gm, can_view_character, can_edit_character
-import json
-import os
-
-def load_lifepath_data():
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'data'))
-    try:
-        with open(os.path.join(base_dir, 'lifepathShared.json'), 'r', encoding='utf-8') as f:
-            shared = json.load(f)
-        with open(os.path.join(base_dir, 'factionTypes.json'), 'r', encoding='utf-8') as f:
-            faction_types = json.load(f)
-        with open(os.path.join(base_dir, 'factionFeelings.json'), 'r', encoding='utf-8') as f:
-            faction_feelings = json.load(f)
-        with open(os.path.join(base_dir, 'rolesLifepath.json'), 'r', encoding='utf-8') as f:
-            roles = json.load(f)
-        return shared, faction_types, faction_feelings, roles
-    except Exception as e:
-        print(f"Error loading lifepath data: {e}")
-        return {}, {}, {}, {}
-
-def is_valid_option(value, table_data):
-    if not value or not table_data or 'options' not in table_data: return False
-    return any(opt['id'] == value for opt in table_data['options'])
-
-def check_lifepath_complete(character, shared, roles_data):
-    if not character.role_key: return False
-    
-    # Check shared fields
-    shared_fields = [
-        'cultural_origin', 'personality', 'clothing_style', 'hairstyle', 'affectation',
-        'value_most', 'feelings_about_people', 'most_valued_person', 'most_valued_possession',
-        'family_background', 'childhood_environment', 'family_crisis', 'life_goals'
-    ]
-    for field in shared_fields:
-        if not getattr(character, field): return False
-        
-    # Check faction fields
-    if not character.friend_faction_type or not character.friend_faction_feeling or not character.friend_faction_name: return False
-    if not character.enemy_faction_type or not character.enemy_faction_feeling or not character.enemy_faction_name: return False
-    
-    # Check role specific fields
-    role_info = roles_data.get(character.role_key)
-    if not role_info or 'tables' not in role_info: return False
-    
-    specific_data = character.role_specific_lifepath or {}
-    for table_key in role_info['tables'].keys():
-        if table_key not in specific_data or not specific_data[table_key]:
-            return False
-            
-    return True
-
-def get_character_secrets(character):
-    """Secrets now live in the Secret/SecretKnowledge tables (Phase 4), not on Character.
-    Returns the secrets this character holds: ones about themselves (text_subject)
-    plus ones they know about others (text_knower)."""
-    result = []
-    for s in Secret.query.filter_by(subject_character_id=character.id).all():
-        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind, 'text': s.text_subject, 'about_self': True})
-    known = db.session.query(Secret, SecretKnowledge).join(
-        SecretKnowledge, SecretKnowledge.secret_id == Secret.id
-    ).filter(SecretKnowledge.knower_character_id == character.id).all()
-    for s, k in known:
-        if s.subject_character_id == character.id:
-            continue
-        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind, 'text': s.text_knower or s.text_subject,
-                       'about_self': False, 'how_learned': k.how_learned})
-    return result
-
-def get_objectives_for(character):
-    """Objectives live in the Objective table (Phase 5), not in the deprecated
-    Character.objectives JSON column. gm_hint and link fields are GM-only."""
-    from routes.session_routes import get_character_objectives
-    session = Session.query.get(character.session_id)
-    return get_character_objectives(character, bool(session and is_session_gm(g.current_user_id, session)))
+from services.cleanup import delete_characters
+from services.lifepath_data import load_lifepath_data, is_valid_option, check_lifepath_complete
+from services.serializers import serialize_character
 
 bp = Blueprint('characters', __name__)
 
@@ -86,7 +16,6 @@ def create_character(session_id):
         return jsonify({'error': 'Session not found'}), 404
         
     # Any member can create their own character
-    from models import SessionMember
     member = SessionMember.query.filter_by(session_id=session_id, user_id=g.current_user_id).first()
     if not member and session.gm_id != g.current_user_id:
         return jsonify({'error': 'Not a member of this session'}), 403
@@ -150,38 +79,8 @@ def get_my_character(session_id):
     if not character:
         return jsonify({'error': 'Character not found for this user in this session'}), 404
 
-    return jsonify({
-        'id': character.id,
-        'player_id': character.player_id,
-        'role_key': character.role_key,
-        'display_name': character.display_name,
-        'description': character.description,
-        'traits': character.traits,
-        'secrets': get_character_secrets(character),
-        'objectives': get_objectives_for(character),
-        'is_killer': character.is_killer,
-        'cultural_origin': character.cultural_origin,
-        'personality': character.personality,
-        'clothing_style': character.clothing_style,
-        'hairstyle': character.hairstyle,
-        'affectation': character.affectation,
-        'value_most': character.value_most,
-        'feelings_about_people': character.feelings_about_people,
-        'most_valued_person': character.most_valued_person,
-        'most_valued_possession': character.most_valued_possession,
-        'family_background': character.family_background,
-        'childhood_environment': character.childhood_environment,
-        'family_crisis': character.family_crisis,
-        'life_goals': character.life_goals,
-        'friend_faction_type': character.friend_faction_type,
-        'friend_faction_name': character.friend_faction_name,
-        'friend_faction_feeling': character.friend_faction_feeling,
-        'enemy_faction_type': character.enemy_faction_type,
-        'enemy_faction_name': character.enemy_faction_name,
-        'enemy_faction_feeling': character.enemy_faction_feeling,
-        'role_specific_lifepath': character.role_specific_lifepath,
-        'lifepath_complete': character.lifepath_complete
-    }), 200
+    session = Session.query.get(character.session_id)
+    return jsonify(serialize_character(character, bool(session and is_session_gm(g.current_user_id, session)))), 200
 
 @bp.route('/<session_id>/characters/<character_id>', methods=['GET'])
 @require_auth
@@ -193,38 +92,8 @@ def get_character(session_id, character_id):
     if not can_view_character(g.current_user_id, character):
         return jsonify({'error': 'Not authorized to view this character'}), 403
 
-    return jsonify({
-        'id': character.id,
-        'player_id': character.player_id,
-        'role_key': character.role_key,
-        'display_name': character.display_name,
-        'description': character.description,
-        'traits': character.traits,
-        'secrets': get_character_secrets(character),
-        'objectives': get_objectives_for(character),
-        'is_killer': character.is_killer,
-        'cultural_origin': character.cultural_origin,
-        'personality': character.personality,
-        'clothing_style': character.clothing_style,
-        'hairstyle': character.hairstyle,
-        'affectation': character.affectation,
-        'value_most': character.value_most,
-        'feelings_about_people': character.feelings_about_people,
-        'most_valued_person': character.most_valued_person,
-        'most_valued_possession': character.most_valued_possession,
-        'family_background': character.family_background,
-        'childhood_environment': character.childhood_environment,
-        'family_crisis': character.family_crisis,
-        'life_goals': character.life_goals,
-        'friend_faction_type': character.friend_faction_type,
-        'friend_faction_name': character.friend_faction_name,
-        'friend_faction_feeling': character.friend_faction_feeling,
-        'enemy_faction_type': character.enemy_faction_type,
-        'enemy_faction_name': character.enemy_faction_name,
-        'enemy_faction_feeling': character.enemy_faction_feeling,
-        'role_specific_lifepath': character.role_specific_lifepath,
-        'lifepath_complete': character.lifepath_complete
-    }), 200
+    session = Session.query.get(character.session_id)
+    return jsonify(serialize_character(character, bool(session and is_session_gm(g.current_user_id, session)))), 200
 
 @bp.route('/<session_id>/characters/<character_id>', methods=['PATCH'])
 @require_auth
@@ -344,8 +213,7 @@ def delete_character(session_id, character_id):
     if not character or character.session_id != session_id:
         return jsonify({'error': 'Character not found'}), 404
 
-    from routes.session_routes import _delete_characters
-    _delete_characters([character.id])
+    delete_characters([character.id])
     db.session.commit()
 
     return jsonify({'message': 'Character deleted successfully'}), 200

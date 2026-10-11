@@ -23,12 +23,10 @@ from generation.secret_templates import (
     load_all_secret_templates,
     get_valid_lifepath_options,
     resolve_template,
-    pick_template,
     pick_template_strict,
     pick_template_relaxed,
     calculate_candidate_weight,
     weighted_choice,
-    score_tags,
     SessionContext,
     get_base_data_dir
 )
@@ -161,6 +159,29 @@ def _generate_secrets(session, rng=None, commit=True):
         generated_knowledge.append(k)
         return k
 
+    def draw_self_or_lie(c, c_tags, kind, role_pool, univ_pool, role_first_probability):
+        """Two-stage draw shared by 'self' and 'lie': pick which pool goes first, then
+        strict -> other pool (strict) -> relaxation ladder across both pools.
+        Returns (template, weight, is_relaxed)."""
+        exclude_ids = set(char_assigned_ids[c.id])
+        exclude_cats = set(char_assigned_categories[c.id])
+
+        draw_role_first = (rng.random() < role_first_probability)
+        first_pool = role_pool if draw_role_first else univ_pool
+        second_pool = univ_pool if draw_role_first else role_pool
+
+        cands = pick_template_strict(first_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
+        is_relaxed = False
+        if not cands:
+            # Fall through to the other pool before the relaxation ladder
+            cands = pick_template_strict(second_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
+        if cands:
+            t = weighted_choice(cands, rng=rng)
+        else:
+            is_relaxed = True
+            t = pick_template_relaxed(first_pool + second_pool, c, c_tags, ctx, kind, exclude_ids, synonym_map, rng=rng)
+        return t, calculate_candidate_weight(t, c, c_tags, ctx, synonym_map), is_relaxed
+
     # Phase A: Assign victim_tie, self, lie, and forced observation per character
     for c in characters:
         c_tags = char_tags[c.id]
@@ -190,66 +211,16 @@ def _generate_secrets(session, rng=None, commit=True):
         vt_k = resolve_template(t_vt['templateKnower'], t_vt['id'], subject=c, knower=None, victim_name=victim_name, victim_title=victim_title, location=loc)
         record_secret(c, t_vt, 'victim_tie', vt_s, vt_k, selection_weight=w, is_relaxed=is_relaxed)
 
-        # 2. Self secret (Two-stage draw: 60% role pool / 40% universal pool)
-        exclude_ids = set(char_assigned_ids[c.id])
-        exclude_cats = set(char_assigned_categories[c.id])
-
-        role_self_pool = pools["roles_pool"].get(c.role_key, {}).get("self", [])
-        univ_self_pool = pools["universal_self"]
-
-        draw_role_first = (rng.random() < 0.60)
-        first_pool = role_self_pool if draw_role_first else univ_self_pool
-        second_pool = univ_self_pool if draw_role_first else role_self_pool
-
-        cands = pick_template_strict(first_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
-        is_relaxed = False
-        if cands:
-            t_self = weighted_choice(cands, rng=rng)
-            w = calculate_candidate_weight(t_self, c, c_tags, ctx, synonym_map)
-        else:
-            # Fall through to the other pool before relaxation ladder
-            cands = pick_template_strict(second_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
-            if cands:
-                t_self = weighted_choice(cands, rng=rng)
-                w = calculate_candidate_weight(t_self, c, c_tags, ctx, synonym_map)
-            else:
-                # Relaxation ladder across combined pools
-                is_relaxed = True
-                combined_self = first_pool + second_pool
-                t_self = pick_template_relaxed(combined_self, c, c_tags, ctx, "self", exclude_ids, synonym_map, rng=rng)
-                w = calculate_candidate_weight(t_self, c, c_tags, ctx, synonym_map)
-
+        # 2. Self secret (two-stage draw: 60% role pool / 40% universal pool)
+        t_self, w, is_relaxed = draw_self_or_lie(c, c_tags, "self", pools["roles_pool"].get(c.role_key, {}).get("self", []),
+                                                 pools["universal_self"], 0.60)
         sf_s = resolve_template(t_self['templateSubject'], t_self['id'], subject=c, knower=None, victim_name=victim_name, victim_title=victim_title, location=loc)
         sf_k = resolve_template(t_self['templateKnower'], t_self['id'], subject=c, knower=None, victim_name=victim_name, victim_title=victim_title, location=loc)
         record_secret(c, t_self, 'self', sf_s, sf_k, selection_weight=w, is_relaxed=is_relaxed)
 
-        # 3. Lie secret (Two-stage draw: 40% role pool / 60% universal pool)
-        exclude_ids = set(char_assigned_ids[c.id])
-        exclude_cats = set(char_assigned_categories[c.id])
-
-        role_lie_pool = pools["roles_pool"].get(c.role_key, {}).get("lie", [])
-        univ_lie_pool = pools["universal_lie"]
-
-        draw_role_first = (rng.random() < 0.40)
-        first_pool = role_lie_pool if draw_role_first else univ_lie_pool
-        second_pool = univ_lie_pool if draw_role_first else role_lie_pool
-
-        cands = pick_template_strict(first_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
-        is_relaxed = False
-        if cands:
-            t_lie = weighted_choice(cands, rng=rng)
-            w = calculate_candidate_weight(t_lie, c, c_tags, ctx, synonym_map)
-        else:
-            cands = pick_template_strict(second_pool, c, c_tags, ctx, exclude_ids, exclude_cats, synonym_map)
-            if cands:
-                t_lie = weighted_choice(cands, rng=rng)
-                w = calculate_candidate_weight(t_lie, c, c_tags, ctx, synonym_map)
-            else:
-                is_relaxed = True
-                combined_lie = first_pool + second_pool
-                t_lie = pick_template_relaxed(combined_lie, c, c_tags, ctx, "lie", exclude_ids, synonym_map, rng=rng)
-                w = calculate_candidate_weight(t_lie, c, c_tags, ctx, synonym_map)
-
+        # 3. Lie secret (two-stage draw: 40% role pool / 60% universal pool)
+        t_lie, w, is_relaxed = draw_self_or_lie(c, c_tags, "lie", pools["roles_pool"].get(c.role_key, {}).get("lie", []),
+                                                pools["universal_lie"], 0.40)
         li_s = resolve_template(t_lie['templateSubject'], t_lie['id'], subject=c, knower=None, victim_name=victim_name, victim_title=victim_title, location=loc)
         li_k = resolve_template(t_lie['templateKnower'], t_lie['id'], subject=c, knower=None, victim_name=victim_name, victim_title=victim_title, location=loc)
         record_secret(c, t_lie, 'lie', li_s, li_k, selection_weight=w, is_relaxed=is_relaxed)
