@@ -100,3 +100,14 @@ def test_sheet_authz(client, app, auth):
 
 def _other_char_id(session):
     return Character.query.filter_by(session_id=session.id).first().id
+
+
+# --- frontend static guard for the new modules ---------------------------------------------------------------------
+
+def test_new_frontend_modules_never_touch_html_sinks():
+    import os
+    root = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend')
+    for rel in ('js/files.js', 'js/import-dialog.js', 'js/pages/print.js', 'js/sheet-render.js', 'print.html'):
+        text = open(os.path.join(root, rel), encoding='utf-8').read()
+        for sink in ('innerHTML', 'outerHTML', 'insertAdjacentHTML', 'document.write'):
+            assert sink not in text, f'{rel} uses {sink}'

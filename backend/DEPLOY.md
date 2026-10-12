@@ -58,3 +58,7 @@ Generated text now stores `{{c:<character id>}}` tokens and resolves names when 
 - `Required data file is missing` - run `python copy_data.py` and deploy `backend/data`.
 - `Template ... has unresolved placeholder` / `composeTemplates.json: ...` - a data file is invalid; the message names it.
 - Browser shows CORS errors - `CORS_ORIGINS` must match the page origin exactly.
+
+## 7. Character exports
+
+Character exports are produced on request and nothing is stored server-side; import reads the file from the request and keeps nothing.

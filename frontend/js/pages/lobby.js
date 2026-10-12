@@ -1,6 +1,7 @@
 import { requireUser } from '../auth.js';
 import { apiFetch } from '../api.js';
 import { el, clear, setText, showAlert, hideAlert } from '../dom.js';
+import { openImportDialog } from '../import-dialog.js';
 import {
     badge, confirmDialog, copyButton, formatDateTime, getParam, labelize, renderEmpty, renderError,
     renderLoading, withBusy
@@ -179,6 +180,12 @@ function renderPlayerPanel() {
         } else {
             container.appendChild(el('p', { class: 'muted', text: 'Pick a name and a role to create your character.' }));
             container.appendChild(createCharacterForm());
+            container.appendChild(el('p', { class: 'muted', text: 'Exported this character before? Restore it instead of building it again.' }));
+            container.appendChild(el('button', { class: 'secondary-btn inline-btn', text: 'Restore from a file...', attrs: { type: 'button', id: 'restoreBtn' },
+                on: { click: () => openImportDialog({
+                    mode: 'create', sessionId,
+                    onDone: result => { window.location.href = `build.html?session=${sid}&char=${encodeURIComponent(result.character_id)}`; }
+                }) } }));
         }
     });
 }

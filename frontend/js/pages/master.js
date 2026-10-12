@@ -1,6 +1,7 @@
 import { requireUser } from '../auth.js';
 import { apiFetch } from '../api.js';
 import { el, clear, showAlert, hideAlert } from '../dom.js';
+import { downloadJson, slugify } from '../files.js';
 import {
     badge, copyButton, formatDateTime, getParam, labelize, loadInto, pointsBadge, pointsLabel, renderEmpty
 } from '../ui.js';
@@ -70,10 +71,25 @@ function renderHeader() {
         el('div', { class: 'stat-row' }, counts.map(([label, n]) => el('div', {}, el('strong', { text: n }), el('span', { class: 'muted', text: label })))),
         el('div', { class: 'toolbar' }, reveal,
             el('a', { class: 'button-link', text: 'Manage generation in the lobby', attrs: { href: `lobby.html?id=${sid}` } }),
+            el('button', { class: 'secondary-btn inline-btn no-print', text: 'Export all characters', attrs: { type: 'button' }, on: { click: exportAll } }),
             el('a', { class: 'button-link no-print', text: 'Print all sheets', attrs: { href: `print.html?id=${sid}` } }),
             el('button', { class: 'secondary-btn inline-btn no-print', text: 'Refresh', attrs: { type: 'button' }, on: { click: reload } }),
             el('button', { class: 'secondary-btn inline-btn no-print', text: 'Print', attrs: { type: 'button' }, on: { click: () => window.print() } })),
         el('p', { class: 'muted', text: killerRevealed ? 'The killer is visible on this page.' : 'The killer is hidden on this page until you reveal it.' }));
+}
+
+async function exportAll(event) {
+    hideAlert();
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+        const bundle = await apiFetch(`/sessions/${sid}/characters/export`);
+        downloadJson(`cyberpunk-characters-${slugify(data.session.name)}.json`, bundle);
+    } catch (err) {
+        showAlert(err.message);
+    } finally {
+        button.disabled = false;
+    }
 }
 
 // --- Characters table -----------------------------------------------------------------------------

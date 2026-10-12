@@ -8,7 +8,7 @@
 </head>
 <body>
     <main class="container">
-        <header class="page-header">
+        <header class="page-header no-print">
             <h1>Character Sheet: <span id="charNameDisplay">Loading...</span></h1>
             <nav class="nav-links" aria-label="Page">
                 <a href="#" id="backLink">Back to Lobby</a>
@@ -24,6 +24,8 @@
                 <button id="saveBtn" type="button">Save changes</button>
                 <a id="editLifepathLink" class="button-link" href="#">Edit Lifepath</a>
                 <button id="printBtn" type="button" class="secondary-btn">Print / Save as PDF</button>
+                <button id="exportBtn" type="button" class="secondary-btn">Export character</button>
+                <button id="importBtn" type="button" class="secondary-btn">Import character...</button>
             </div>
 
             <div class="character-grid" style="margin-bottom: 20px;">
@@ -33,7 +35,7 @@
                     <input type="text" id="displayName" maxlength="50" autocomplete="off" aria-describedby="nameError" class="no-print">
                     <p id="nameError" class="field-error" hidden></p>
                     <p id="printName" class="print-only print-name"></p>
-                    <p>Role: <strong id="roleDisplay" class="role-tag">...</strong></p>
+                    <p class="no-print">Role: <strong id="roleDisplay" class="role-tag">...</strong></p>
                     <label for="description" style="margin-top: 12px;" class="no-print">Description / backstory</label>
                     <textarea id="description" class="no-print" rows="6" maxlength="4000" aria-describedby="descriptionError composeHint"></textarea>
                     <p id="printDescription" class="print-only print-pre"></p>

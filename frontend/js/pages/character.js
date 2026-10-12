@@ -1,6 +1,8 @@
 import { requireUser } from '../auth.js';
 import { apiFetch } from '../api.js';
 import { el, clear, setText, showAlert, hideAlert } from '../dom.js';
+import { downloadJson, slugify } from '../files.js';
+import { openImportDialog } from '../import-dialog.js';
 import { printHeader, printFooter, relationshipItem, secretItem } from '../sheet-render.js';
 import {
     confirmDialog, getParam, loadInto, pointsBadge, pointsLabel, renderEmpty, renderError,
@@ -76,6 +78,24 @@ function renderPrintFrame() {
 ['displayName', 'description', 'traits'].forEach(id => $(id).addEventListener('input', syncPrintMirrors));
 window.addEventListener('beforeprint', () => { syncPrintMirrors(); renderPrintFrame(); });
 $('printBtn').addEventListener('click', () => window.print());
+
+// Backup / restore (works in any session status; the import report explains locked fields)
+$('exportBtn').addEventListener('click', async () => {
+    hideAlert();
+    await withBusy($('exportBtn'), 'Exporting...', async () => {
+        try {
+            const file = await apiFetch(`/sessions/${sid}/characters/${cid}/export`);
+            downloadJson(`cyberpunk-character-${slugify(file.character.display_name)}.json`, file);
+        } catch (err) {
+            showAlert(err.message);
+        }
+    });
+});
+
+$('importBtn').addEventListener('click', () => {
+    hideAlert();
+    openImportDialog({ mode: 'existing', sessionId, characterId: charId, onDone: () => init() });
+});
 
 // --- Description / traits ----------------------------------------------------------------------
 
