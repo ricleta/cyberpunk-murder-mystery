@@ -126,7 +126,8 @@ $('composeBtn').addEventListener('click', async () => {
 function secretItem(secret) {
     const badges = el('div', { class: 'item-badges' },
         badge(KIND_LABELS[secret.kind] || labelize(secret.kind), secret.kind === 'lie' ? 'warn' : 'info'),
-        secret.severity ? badge(`Severity ${secret.severity}`, secret.severity >= 3 ? 'danger' : 'neutral') : null);
+        // Severity of someone else's secret would single out the killer's trail secrets
+        secret.about_self && secret.severity ? badge(`Severity ${secret.severity}`, secret.severity >= 3 ? 'danger' : 'neutral') : null);
     return el('div', { class: 'sheet-item' },
         el('div', { class: 'item-text' },
             secret.about_self ? null : el('div', { class: 'muted' }, 'About ', el('strong', { text: secret.subject_name || 'someone' })),

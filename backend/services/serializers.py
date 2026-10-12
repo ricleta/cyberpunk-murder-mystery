@@ -67,28 +67,37 @@ def get_character_objectives(character, for_gm, names=None):
     return [serialize_objective(o, for_gm, names) for o in rows]
 
 
-def get_character_secrets(character, names=None):
+def get_character_secrets(character, names=None, for_gm=False):
     """Secrets live in the Secret/SecretKnowledge tables. Returns the secrets this
     character holds: ones about themselves (text_subject) plus ones they know about
-    others (text_knower)."""
+    others (text_knower).
+
+    Players get a deliberately lean shape. The killer's trail secrets are the only
+    observations with severity 3 and category murder_*, and their template ids say
+    what they are, so a knower must never receive template_id / category / severity
+    (they could confirm "this person is the killer"). Own secrets keep severity only.
+    The GM payload keeps every field."""
     names = names if names is not None else session_name_map(character.session_id)
     result = []
     for s in Secret.query.filter_by(subject_character_id=character.id).all():
-        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind,
-                       'text': resolve_names(s.text_subject, names), 'about_self': True,
-                       'severity': s.severity, 'category': s.category})
+        item = {'id': s.id, 'kind': s.kind, 'text': resolve_names(s.text_subject, names),
+                'about_self': True, 'severity': s.severity}
+        if for_gm:
+            item.update({'template_id': s.template_id, 'category': s.category})
+        result.append(item)
     known = db.session.query(Secret, SecretKnowledge).join(
         SecretKnowledge, SecretKnowledge.secret_id == Secret.id
     ).filter(SecretKnowledge.knower_character_id == character.id).all()
     for s, k in known:
         if s.subject_character_id == character.id:
             continue
-        result.append({'id': s.id, 'template_id': s.template_id, 'kind': s.kind,
-                       'text': resolve_names(s.text_knower or s.text_subject, names),
-                       'about_self': False, 'how_learned': resolve_names(k.how_learned, names),
-                       'subject_character_id': s.subject_character_id,
-                       'subject_name': names.get(s.subject_character_id),
-                       'severity': s.severity, 'category': s.category})
+        item = {'id': s.id, 'kind': s.kind, 'text': resolve_names(s.text_knower or s.text_subject, names),
+                'about_self': False, 'how_learned': resolve_names(k.how_learned, names),
+                'subject_character_id': s.subject_character_id,
+                'subject_name': names.get(s.subject_character_id)}
+        if for_gm:
+            item.update({'template_id': s.template_id, 'category': s.category, 'severity': s.severity})
+        result.append(item)
     return result
 
 
@@ -102,7 +111,7 @@ def serialize_character(c, viewer_is_gm):
         'display_name': c.display_name,
         'description': c.description,
         'traits': c.traits,
-        'secrets': get_character_secrets(c, names),
+        'secrets': get_character_secrets(c, names, for_gm=viewer_is_gm),
         'objectives': get_character_objectives(c, viewer_is_gm, names),
         'is_killer': c.is_killer,
     }
@@ -146,14 +155,13 @@ def serialize_secret_for_gm(s, names, knowers):
 
 
 def serialize_secret_for_subject(s, names):
-    """The subject sees their own secret, but never who knows it or the knower wording."""
+    """The subject sees their own secret, but never who knows it, the knower wording,
+    or template_id / category."""
     return {
         'id': s.id,
-        'template_id': s.template_id,
         'subject_character_id': s.subject_character_id,
         'subject_name': names.get(s.subject_character_id),
         'kind': s.kind,
-        'category': s.category,
         'severity': s.severity,
         'is_killer_core': s.is_killer_core,
         'is_killer_trail': s.is_killer_trail,
@@ -162,14 +170,12 @@ def serialize_secret_for_subject(s, names):
 
 
 def serialize_secret_for_knower(s, names):
-    """A knower sees only the knower wording: no text_subject, killer flags or other knowers."""
+    """A knower sees only the knower wording and who it is about. No template_id,
+    category, severity or killer flags: those would single out the killer's trail secrets."""
     return {
         'id': s.id,
-        'template_id': s.template_id,
         'subject_character_id': s.subject_character_id,
         'subject_name': names.get(s.subject_character_id),
         'kind': s.kind,
-        'category': s.category,
-        'severity': s.severity,
         'text_knower': resolve_names(s.text_knower, names)
     }
