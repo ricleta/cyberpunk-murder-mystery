@@ -7,21 +7,11 @@ from models import Session, SessionMember, Character
 from auth import require_auth, is_session_gm, can_view_character, can_edit_character
 from services import validation
 from services.cleanup import delete_characters
-from services.errors import ApiError
-from services.lifepath_data import load_lifepath_data, is_valid_option, check_lifepath_complete
+from services.character_updates import apply_character_update
 from services.serializers import serialize_character
-from services.session_lock import is_locked, ensure_unlocked, locked_error
+from services.session_lock import ensure_unlocked
 
 bp = Blueprint('characters', __name__)
-
-SHARED_FIELDS_MAP = {
-    'cultural_origin': 'culturalOrigin', 'personality': 'personality', 'clothing_style': 'clothingStyle',
-    'hairstyle': 'hairstyle', 'affectation': 'affectation', 'value_most': 'valueMost',
-    'feelings_about_people': 'feelingsAboutPeople', 'most_valued_person': 'mostValuedPerson',
-    'most_valued_possession': 'mostValuedPossession', 'family_background': 'familyBackground',
-    'childhood_environment': 'childhoodEnvironment', 'family_crisis': 'familyCrisis', 'life_goals': 'lifeGoals'
-}
-
 
 @bp.route('/<session_id>/characters', methods=['POST'])
 @require_auth
@@ -119,14 +109,6 @@ def get_character(session_id, character_id):
     return jsonify(serialize_character(character, bool(session and is_session_gm(g.current_user_id, session)))), 200
 
 
-def _validated_option(data, field, table_data, message):
-    """The submitted option id (or None to clear it), checked against its options table."""
-    val = data[field]
-    if val is not None and not is_valid_option(val, table_data):
-        raise ApiError(message, 400)
-    return val
-
-
 @bp.route('/<session_id>/characters/<character_id>', methods=['PATCH'])
 @require_auth
 def update_character(session_id, character_id):
@@ -138,79 +120,8 @@ def update_character(session_id, character_id):
         return jsonify({'error': 'Not authorized to edit this character'}), 403
 
     session = Session.query.get(session_id)
-    is_gm = is_session_gm(g.current_user_id, session)
     data = validation.json_object()
-    shared, faction_types, faction_feelings, roles_data = load_lifepath_data()
-
-    # --- Validate everything first; nothing is written until every field passes ---
-    free = {}      # always editable: name, description, traits
-    locked = {}    # role / Lifepath / factions / killer: lobby only (see session_lock)
-
-    if 'display_name' in data:
-        free['display_name'] = validation.display_name(data['display_name'])
-    if 'description' in data:
-        free['description'] = validation.description(data['description'])
-    if 'traits' in data:
-        free['traits'] = validation.traits(data['traits'])
-    # 'secrets' is no longer a Character column; secrets are generated in Phase 4.
-    # 'objectives' is not accepted here; use the /objectives endpoints (Phase 5).
-
-    new_role = character.role_key
-    if 'role_key' in data:
-        new_role = validation.role_key(data['role_key'])
-        locked['role_key'] = new_role
-    role_changed = new_role != character.role_key
-
-    for db_field, json_key in SHARED_FIELDS_MAP.items():
-        if db_field in data:
-            locked[db_field] = _validated_option(data, db_field, shared.get(json_key), f'Invalid value for {db_field}')
-
-    for side in ('friend', 'enemy'):
-        if f'{side}_faction_type' in data:
-            locked[f'{side}_faction_type'] = _validated_option(
-                data, f'{side}_faction_type', faction_types, f'Invalid {side} faction type')
-        if f'{side}_faction_name' in data:
-            locked[f'{side}_faction_name'] = validation.faction_name(data[f'{side}_faction_name'], f'{side}_faction_name')
-        if f'{side}_faction_feeling' in data:
-            locked[f'{side}_faction_feeling'] = _validated_option(
-                data, f'{side}_faction_feeling', faction_feelings.get(side + 'Feelings'), f'Invalid {side} feeling')
-
-    if 'role_specific_lifepath' in data:
-        val = data['role_specific_lifepath']
-        if not isinstance(val, dict):
-            raise ApiError('role_specific_lifepath must be an object')
-        role_info = roles_data.get(new_role) if new_role else None
-        if role_info:
-            for k, v in val.items():
-                if not (k in role_info.get('tables', {}) and is_valid_option(v, role_info['tables'][k])):
-                    raise ApiError(f'Invalid value for role specific field {k}', 400)
-        # A role change clears the old role's picks; then the submitted ones merge in.
-        merged = {} if role_changed else dict(character.role_specific_lifepath or {})
-        merged.update(val)
-        locked['role_specific_lifepath'] = merged
-
-    if 'is_killer' in data:
-        new_killer = validation.boolean(data['is_killer'], 'is_killer')
-        if is_gm:
-            locked['is_killer'] = new_killer
-        # Players cannot set the killer flag; it is ignored for them, as before.
-
-    # --- Lobby lock: re-sending an identical value is a no-op, a change is a 409 ---
-    if is_locked(session):
-        for field, value in locked.items():
-            if value != getattr(character, field):
-                raise locked_error('The game has been generated, so role, Lifepath and killer cannot be '
-                                   'changed. Ask the GM to reset the game in the lobby first.')
-
-    # --- Apply ---
-    for field, value in free.items():
-        setattr(character, field, value)
-    if role_changed:
-        character.role_specific_lifepath = {}  # Clear on role change
-    for field, value in locked.items():
-        setattr(character, field, value)
-
-    character.lifepath_complete = check_lifepath_complete(character, shared, roles_data)
+    apply_character_update(character, session, is_session_gm(g.current_user_id, session), data)
     db.session.commit()
 
     return jsonify({

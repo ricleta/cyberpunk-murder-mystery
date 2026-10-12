@@ -23,8 +23,16 @@ def load_lifepath_data(reload=False):
                 raise RuntimeError(f"Required data file is missing: {path} (run copy_data.py from backend/)")
         _cache['lifepath'] = (_read('lifepathShared.json'), _read('factionTypes.json'),
                               _read('factionFeelings.json'), _read('rolesLifepath.json'))
-        _cache['role_keys'] = frozenset(r['key'] for r in _read('roles.json'))
+        roles = _read('roles.json')
+        _cache['role_keys'] = frozenset(r['key'] for r in roles)
+        _cache['role_labels'] = {r['key']: r.get('label', r['key']) for r in roles}
     return _cache['lifepath']
+
+
+def get_role_labels():
+    """{role key: display label} from roles.json."""
+    load_lifepath_data()
+    return _cache['role_labels']
 
 
 def get_role_keys():
