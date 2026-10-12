@@ -1,58 +1,60 @@
-# Deployment Guide (Phase 1)
+# Deployment Guide
 
-This project consists of a Flask backend and a static HTML/JS frontend. It is designed to be hosted on PythonAnywhere (backend) and GitHub Pages (frontend).
+A Flask backend (PythonAnywhere) and a static HTML/JS frontend (GitHub Pages).
 
-## 1. Backend Deployment (PythonAnywhere)
+## 1. Environment variables
 
-1. **Upload Source Code**: 
-   - Zip the `backend` folder and upload it to your PythonAnywhere files, or clone your repository directly via the bash console.
-   - Extract it so it sits at `/home/yourusername/backend`.
+The app **refuses to start** outside debug/testing mode unless all of these are set:
 
-2. **Virtual Environment**:
-   - Open a Bash console in PythonAnywhere.
-   - Run `mkvirtualenv --python=/usr/bin/python3.10 my-env` (replace python version if needed).
-   - `pip install -r /home/yourusername/backend/requirements.txt`
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Flask secret. Must not be the built-in default. |
+| `JWT_SECRET_KEY` | Signs login tokens. Must not be the built-in default. |
+| `CORS_ORIGINS` | Comma-separated allowed browser origins, e.g. `https://you.github.io` (no path, no trailing slash). `*` is refused. |
+| `DATABASE_URL` | Optional. Defaults to `sqlite:///cyberpunk.db` (stored in `instance/`). |
 
-3. **Database Initialization**:
-   - In the console, export your environment variables if needed (e.g., `export FLASK_APP=backend.app:create_app`).
-   - Run `flask db init` (if migrations not initialized), `flask db migrate`, `flask db upgrade` to create the SQLite file. (Note: in this specific Phase 1 code, we haven't strictly created the migrate scripts yet, so you can alternatively run a small script calling `db.create_all()` within the app context).
+In debug/testing the secrets fall back to dev defaults and CORS allows `localhost` / `127.0.0.1` on any port.
 
-   - **Upgrading an existing database** (e.g. to Phase 5, which adds the `objective` table): run `flask --app app db upgrade`. A brand-new database is created with `python init_db.py` and then marked current with `flask --app app db stamp head`; the migration chain cannot build a database from empty.
-   - **Template data**: `frontend/data/` is the source of truth. After changing any JSON there (including `frontend/data/objectives/`), run `python copy_data.py` from `backend/` and deploy both copies. The app validates secret and objective templates at startup and refuses to start if they are invalid.
+## 2. Backend (PythonAnywhere)
 
-4. **Web App Configuration**:
-   - Go to the "Web" tab. Add a new web app. Choose "Manual configuration" and select the Python version matching your virtual environment.
-   - Under the **Virtualenv** section, enter the path to your env (e.g., `/home/yourusername/.virtualenvs/my-env`).
-   - Under the **Code** section, set the source code directory to `/home/yourusername/backend`.
-   - Edit the **WSGI configuration file** to look like this:
-     ```python
-     import sys
-     import os
+1. Upload or clone the repository so `backend/` sits at e.g. `/home/you/backend`. The backend reads **only `backend/data`** at runtime.
+2. Create a virtualenv (Python 3.10+; tested on 3.12 and 3.14) and install:
+   `pip install -r requirements.txt`.
+   `tracery==0.1.1` is source-only on PyPI. If its install fails with "No module named setuptools" or "bdist_wheel", run `pip install --upgrade pip setuptools wheel` first.
+3. Database:
+   - New database: `flask --app app db upgrade` (the migration chain builds a fresh database). `python init_db.py` + `flask --app app db stamp head` also works.
+   - Existing database: `flask --app app db upgrade`. The latest revision adds `session.generation_seed/generated_at/generation_report` and drops the unused `character.objectives` column.
+4. Web tab: manual configuration, virtualenv path, source directory `/home/you/backend`. WSGI file:
+   ```python
+   import sys, os
+   path = '/home/you/backend'
+   if path not in sys.path:
+       sys.path.append(path)
+   os.environ['SECRET_KEY'] = '...long random string...'
+   os.environ['JWT_SECRET_KEY'] = '...another long random string...'
+   os.environ['CORS_ORIGINS'] = 'https://YOUR-USERNAME.github.io'
+   from app import create_app
+   application = create_app()
+   ```
+5. Reload the web app. Unexpected errors are logged with tracebacks to the server error log; clients only see a generic JSON 500.
 
-     path = '/home/yourusername/backend'
-     if path not in sys.path:
-         sys.path.append(path)
+## 3. Template data
 
-     # Set environment variables for production
-     os.environ['SECRET_KEY'] = 'your-secure-secret'
-     os.environ['JWT_SECRET_KEY'] = 'your-secure-jwt-secret'
-     
-     from app import create_app
-     application = create_app()
-     ```
-   - Reload the web app. Your API is now live at `https://yourusername.pythonanywhere.com`.
+`frontend/data/` is the source of truth. After editing any JSON there, run `python copy_data.py` from `backend/` and commit both copies. Templates (secrets, objectives, compose) are validated at startup and the app will not start if they are invalid.
 
-## 2. Frontend Deployment (GitHub Pages)
+## 4. Frontend (GitHub Pages)
 
-1. **Update API URL**:
-   - In `frontend/js/api.js`, change `const API_BASE = '/api';` to point to your PythonAnywhere domain: 
-     `const API_BASE = 'https://yourusername.pythonanywhere.com/api';`
+1. Edit `PRODUCTION_API_BASE` in `frontend/js/config.js` to `https://<you>.pythonanywhere.com/api` **before deploying**. It is used on every host except `localhost` / `127.0.0.1`.
+2. Publish the contents of `frontend/`. Project sites are served under `/repo-name/`; all links and redirects are relative, so no other change is needed.
 
-2. **Deploy**:
-   - Push the contents of the `frontend` directory to a GitHub repository.
-   - Go to the repository settings -> Pages.
-   - Set the source to the branch containing your frontend code (e.g., `main` root directory).
-   - GitHub will provide a URL (e.g., `https://yourusername.github.io/repo-name/`).
+## 5. Existing sessions and name tokens
 
-3. **CORS Configuration (Backend)**:
-   - Make sure your Flask CORS setup in `backend/app.py` allows your GitHub Pages URL in production, so requests aren't blocked by the browser. For phase 1, it is wide open by default, but should be restricted in future phases.
+Generated text now stores `{{c:<character id>}}` tokens and resolves names when served, so renames show everywhere. Sessions generated before this change keep their baked-in names; **regenerate (or reset and generate) them** to benefit.
+
+## 6. Troubleshooting
+
+- `Refusing to start: SECRET_KEY is still the built-in development default` / `JWT_SECRET_KEY ...` - set the variable.
+- `Refusing to start: CORS_ORIGINS is not set` - set your GitHub Pages origin.
+- `Required data file is missing` - run `python copy_data.py` and deploy `backend/data`.
+- `Template ... has unresolved placeholder` / `composeTemplates.json: ...` - a data file is invalid; the message names it.
+- Browser shows CORS errors - `CORS_ORIGINS` must match the page origin exactly.
