@@ -74,6 +74,7 @@ def create_app(config_class=Config):
     from routes.character_routes import bp as character_bp
     from routes.generation_routes import bp as generation_bp
     from routes.content_routes import bp as content_bp
+    from routes.transfer_routes import bp as transfer_bp
     from routes.lifepath_routes import bp as lifepath_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -81,6 +82,7 @@ def create_app(config_class=Config):
     app.register_blueprint(character_bp, url_prefix='/api/sessions') # Prefix shared with sessions
     app.register_blueprint(generation_bp, url_prefix='/api/sessions')
     app.register_blueprint(content_bp, url_prefix='/api/sessions')
+    app.register_blueprint(transfer_bp, url_prefix='/api/sessions')
     app.register_blueprint(lifepath_bp, url_prefix='/api/lifepath-data')
 
     @app.route('/api/health')

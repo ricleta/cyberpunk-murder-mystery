@@ -1,8 +1,7 @@
 """Phase 7A §2: secret metadata must not let a player tell the killer's trail secrets apart."""
 import pytest
 
-from extensions import db
-from models import Character, Secret, SecretKnowledge
+from models import Secret
 from conftest import create_ungenerated_session, generate_via_api, ROLES_10
 
 FORBIDDEN = {'template_id', 'category', 'is_killer_core', 'is_killer_trail', 'severity'}

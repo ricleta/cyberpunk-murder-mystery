@@ -1,11 +1,6 @@
 """Phase 7A: player-view sheet, export, import."""
-import json
-
-import pytest
-
-from extensions import db
-from models import Character, Session, SessionMember, User
-from conftest import create_ungenerated_session, generate_via_api, ROLES_10
+from models import Character
+from conftest import create_ungenerated_session, generate_via_api
 
 ROLES5 = ["solo", "exec", "netrunner", "fixer", "media"]
 FORBIDDEN_SHEET_KEYS = {
