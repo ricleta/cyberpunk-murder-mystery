@@ -1,8 +1,9 @@
 import { requireUser } from '../auth.js';
 import { apiFetch } from '../api.js';
 import { el, clear, setText, showAlert, hideAlert } from '../dom.js';
+import { printHeader, printFooter, relationshipItem, secretItem } from '../sheet-render.js';
 import {
-    badge, confirmDialog, getParam, labelize, loadInto, pointsBadge, pointsLabel, renderEmpty, renderError,
+    confirmDialog, getParam, loadInto, pointsBadge, pointsLabel, renderEmpty, renderError,
     renderLoading, withBusy
 } from '../ui.js';
 
@@ -17,8 +18,6 @@ const DESCRIPTION_MAX = 4000;
 const TRAIT_MAX = 60;
 const TRAITS_MAX_COUNT = 20;
 const OBJECTIVE_MAX = 500;
-
-const KIND_LABELS = { victim_tie: 'Tie to the victim', self: 'Secret', lie: 'Lie', observation: 'Observation' };
 
 let isGm = false;
 let character = null;
@@ -54,6 +53,30 @@ function validateSheetFields() {
     return okName && okDescription && okTraits;
 }
 
+// --- Print mirrors -------------------------------------------------------------------------------
+// Textareas print as clipped boxes, so print-only elements mirror their current value.
+
+function syncPrintMirrors() {
+    $('printDescription').textContent = $('description').value;
+    const traits = parseTraits();
+    $('printTraits').textContent = traits.join(', ');
+    $('printName').textContent = $('displayName').value;
+}
+
+function renderPrintFrame() {
+    if (!character) return;
+    const holderTop = clear($('printHeaderSlot'));
+    holderTop.appendChild(printHeader({
+        sessionName: session.name, characterName: character.display_name, role: character.role_key,
+        date: new Date().toLocaleDateString()
+    }));
+    clear($('printFooterSlot')).appendChild(printFooter(character.display_name));
+}
+
+['displayName', 'description', 'traits'].forEach(id => $(id).addEventListener('input', syncPrintMirrors));
+window.addEventListener('beforeprint', () => { syncPrintMirrors(); renderPrintFrame(); });
+$('printBtn').addEventListener('click', () => window.print());
+
 // --- Description / traits ----------------------------------------------------------------------
 
 function fillSheet() {
@@ -63,6 +86,8 @@ function fillSheet() {
     setText('roleDisplay', (character.role_key || 'unknown').toUpperCase());
     $('description').value = character.description || '';
     $('traits').value = (character.traits || []).join(', ');
+    syncPrintMirrors();
+    renderPrintFrame();
 
     const locked = session.status !== 'lobby';
     const lifepathLink = $('editLifepathLink');
@@ -89,6 +114,7 @@ $('saveBtn').addEventListener('click', async () => {
             await apiFetch(`/sessions/${sid}/characters/${cid}`, { method: 'PATCH', body: JSON.stringify(payload) });
             character.display_name = payload.display_name;
             setText('charNameDisplay', payload.display_name);
+            renderPrintFrame();
             showAlert('Saved successfully!', 'success');
             // Generated text shows the new name everywhere: refresh what depends on it
             loadSecrets();
@@ -113,6 +139,7 @@ $('composeBtn').addEventListener('click', async () => {
             const suggestion = await apiFetch(`/sessions/${sid}/characters/${cid}/compose`, { method: 'POST' });
             $('description').value = suggestion.description;
             $('traits').value = suggestion.traits.join(', ');
+            syncPrintMirrors();
             validateSheetFields();
             showAlert('Suggestion filled in. Edit it if you like, then click Save changes to keep it.', 'info');
         } catch (err) {
@@ -122,19 +149,6 @@ $('composeBtn').addEventListener('click', async () => {
 });
 
 // --- Secrets -----------------------------------------------------------------------------------
-
-function secretItem(secret) {
-    const badges = el('div', { class: 'item-badges' },
-        badge(KIND_LABELS[secret.kind] || labelize(secret.kind), secret.kind === 'lie' ? 'warn' : 'info'),
-        // Severity of someone else's secret would single out the killer's trail secrets
-        secret.about_self && secret.severity ? badge(`Severity ${secret.severity}`, secret.severity >= 3 ? 'danger' : 'neutral') : null);
-    return el('div', { class: 'sheet-item' },
-        el('div', { class: 'item-text' },
-            secret.about_self ? null : el('div', { class: 'muted' }, 'About ', el('strong', { text: secret.subject_name || 'someone' })),
-            el('div', { text: secret.text }),
-            !secret.about_self && secret.how_learned ? el('div', { class: 'objective-meta', text: `How you learned it: ${secret.how_learned}` }) : null),
-        badges);
-}
 
 function renderSecrets(chars, container) {
     const secrets = chars.secrets || [];
@@ -173,11 +187,7 @@ function renderRelationships(data, container) {
         renderEmpty(container, 'No relationships generated yet.', 'Relationships appear here once the GM generates the game.');
         return;
     }
-    mine.forEach(r => container.appendChild(el('div', { class: 'sheet-item' },
-        el('div', { class: 'item-text' },
-            el('div', {}, el('strong', { text: r.other || 'Unknown' })),
-            el('div', { text: r.text || '' })),
-        el('div', { class: 'item-badges' }, badge(labelize(r.type), 'info')))));
+    mine.forEach(r => container.appendChild(relationshipItem(r)));
 }
 
 function loadRelationships() {
@@ -208,7 +218,7 @@ function validateObjectiveText(text) {
 function objectiveRow(o) {
     const body = el('div', { class: 'objective-body' }, el('div', { text: o.text }));
     if (o.gm_hint) {   // gm_hint is only ever sent to the GM
-        body.appendChild(el('details', { class: 'objective-meta' }, el('summary', { text: 'GM hint' }), o.gm_hint));
+        body.appendChild(el('details', { class: 'objective-meta gm-only' }, el('summary', { text: 'GM hint' }), o.gm_hint));
     }
     const row = el('div', { class: 'objective-row' }, pointsBadge(o.points), body,
         smallButton('Edit', () => row.replaceWith(objectiveEditor(o)), 'no-print', `Edit objective: ${o.text}`),
@@ -220,7 +230,7 @@ function objectiveEditor(o) {
     const input = el('input', { attrs: { type: 'text', maxlength: String(OBJECTIVE_MAX + 50), 'aria-label': 'Objective text' } });
     input.value = o.text;
     const select = pointsSelect(o.points);
-    const hint = isGm ? el('input', { attrs: { type: 'text', maxlength: '500', placeholder: 'GM hint', 'aria-label': 'GM hint' } }) : null;
+    const hint = isGm ? el('input', { class: 'gm-only', attrs: { type: 'text', maxlength: '500', placeholder: 'GM hint', 'aria-label': 'GM hint' } }) : null;
     if (hint) hint.value = o.gm_hint || '';
     const error = el('p', { class: 'field-error', attrs: { role: 'alert', hidden: true } });
     const save = smallButton('Save', async () => {

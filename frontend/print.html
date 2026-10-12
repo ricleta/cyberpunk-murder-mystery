@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Sheets - Cyberpunk Murder Mystery</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="container">
+        <header class="page-header no-print">
+            <h1>Print Sheets</h1>
+            <nav class="nav-links" aria-label="Page">
+                <a href="#" id="backLink">Back to Master Sheet</a>
+            </nav>
+        </header>
+
+        <div id="alertBox" class="no-print" aria-live="polite" aria-atomic="true"></div>
+        <div id="printStatus" class="no-print"></div>
+
+        <section id="pickerPanel" class="panel print-picker-panel no-print" hidden aria-labelledby="pickerHeading">
+            <h2 id="pickerHeading">Handouts</h2>
+            <div id="generationBanner"></div>
+            <p class="muted">Each selected character prints on its own page and shows only what that player sees: no GM hints and no killer information.
+                To make one PDF per player, select a single character and print it.</p>
+            <div class="toolbar">
+                <button id="selectAllBtn" type="button" class="secondary-btn">Select all</button>
+                <button id="selectNoneBtn" type="button" class="secondary-btn">Select none</button>
+                <button id="printBtn" type="button">Print / Save as PDF</button>
+            </div>
+            <p id="printReason" class="muted" role="status"></p>
+            <ul id="characterPicker" class="print-picker" aria-label="Characters to print"></ul>
+        </section>
+
+        <div id="sheets"></div>
+    </main>
+
+    <script type="module" src="js/pages/print.js"></script>
+</body>
+</html>

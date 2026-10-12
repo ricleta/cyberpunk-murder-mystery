@@ -18,21 +18,25 @@
         <div id="alertBox" aria-live="polite" aria-atomic="true"></div>
         <div id="sheetStatus"></div>
 
-        <div id="sheet" hidden>
+        <div id="sheet" class="print-document" hidden>
+            <div id="printHeaderSlot"></div>
             <div class="toolbar no-print">
                 <button id="saveBtn" type="button">Save changes</button>
                 <a id="editLifepathLink" class="button-link" href="#">Edit Lifepath</a>
+                <button id="printBtn" type="button" class="secondary-btn">Print / Save as PDF</button>
             </div>
 
             <div class="character-grid" style="margin-bottom: 20px;">
                 <section class="sheet-section" aria-labelledby="descriptionHeading" style="margin-bottom: 0;">
                     <h2 id="descriptionHeading">Description</h2>
-                    <label for="displayName">Character name</label>
-                    <input type="text" id="displayName" maxlength="50" autocomplete="off" aria-describedby="nameError">
+                    <label for="displayName" class="no-print">Character name</label>
+                    <input type="text" id="displayName" maxlength="50" autocomplete="off" aria-describedby="nameError" class="no-print">
                     <p id="nameError" class="field-error" hidden></p>
+                    <p id="printName" class="print-only print-name"></p>
                     <p>Role: <strong id="roleDisplay" class="role-tag">...</strong></p>
-                    <label for="description" style="margin-top: 12px;">Description / backstory</label>
-                    <textarea id="description" rows="6" maxlength="4000" aria-describedby="descriptionError composeHint"></textarea>
+                    <label for="description" style="margin-top: 12px;" class="no-print">Description / backstory</label>
+                    <textarea id="description" class="no-print" rows="6" maxlength="4000" aria-describedby="descriptionError composeHint"></textarea>
+                    <p id="printDescription" class="print-only print-pre"></p>
                     <p id="descriptionError" class="field-error" hidden></p>
                     <div class="no-print">
                         <button id="composeBtn" type="button" class="secondary-btn inline-btn" aria-describedby="composeHint">Compose from Lifepath</button>
@@ -44,10 +48,11 @@
 
                 <section class="sheet-section" aria-labelledby="traitsHeading" style="margin-bottom: 0;">
                     <h2 id="traitsHeading">Traits</h2>
-                    <label for="traits">Traits (separated by commas)</label>
-                    <textarea id="traits" rows="5" aria-describedby="traitsError"></textarea>
+                    <label for="traits" class="no-print">Traits (separated by commas)</label>
+                    <textarea id="traits" class="no-print" rows="5" aria-describedby="traitsError"></textarea>
+                    <p id="printTraits" class="print-only"></p>
                     <p id="traitsError" class="field-error" hidden></p>
-                    <p class="muted" style="font-size: 0.85rem;">Up to 20 traits, 60 characters each.</p>
+                    <p class="muted no-print" style="font-size: 0.85rem;">Up to 20 traits, 60 characters each.</p>
                 </section>
             </div>
 
@@ -82,6 +87,8 @@
                     <button type="submit" id="addObjectiveBtn" class="secondary-btn">+ Add Objective</button>
                 </form>
             </section>
+
+            <div id="printFooterSlot"></div>
         </div>
     </main>
 

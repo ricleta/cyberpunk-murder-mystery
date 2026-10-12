@@ -70,6 +70,7 @@ function renderHeader() {
         el('div', { class: 'stat-row' }, counts.map(([label, n]) => el('div', {}, el('strong', { text: n }), el('span', { class: 'muted', text: label })))),
         el('div', { class: 'toolbar' }, reveal,
             el('a', { class: 'button-link', text: 'Manage generation in the lobby', attrs: { href: `lobby.html?id=${sid}` } }),
+            el('a', { class: 'button-link no-print', text: 'Print all sheets', attrs: { href: `print.html?id=${sid}` } }),
             el('button', { class: 'secondary-btn inline-btn no-print', text: 'Refresh', attrs: { type: 'button' }, on: { click: reload } }),
             el('button', { class: 'secondary-btn inline-btn no-print', text: 'Print', attrs: { type: 'button' }, on: { click: () => window.print() } })),
         el('p', { class: 'muted', text: killerRevealed ? 'The killer is visible on this page.' : 'The killer is hidden on this page until you reveal it.' }));

@@ -830,6 +830,50 @@ th {
     }
 }
 
+/* Print helpers: hidden on screen, shown when printing */
+.print-only {
+    display: none;
+}
+
+.print-pre {
+    white-space: pre-wrap;
+}
+
+.print-sheet {
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    background: var(--panel-bg);
+}
+
+.print-sheet-footer {
+    margin-top: 16px;
+    font-style: italic;
+    color: var(--muted-color);
+}
+
+.print-picker {
+    list-style: none;
+    padding: 0;
+}
+
+.print-picker li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: var(--tap-size);
+}
+
+.print-picker input[type="checkbox"] {
+    flex-shrink: 0;
+}
+
+.print-picker label {
+    margin: 0;
+    font-weight: normal;
+    font-size: 1rem;
+}
+
 /* Print: readable black on white, no controls, every panel open */
 @media print {
     body {
@@ -881,5 +925,89 @@ th {
 
     .matrix td.diagonal {
         background: #ddd;
+    }
+}
+
+/* Print sheets (character page and print.html) */
+@page {
+    margin: 14mm;
+}
+
+@media print {
+    .print-only {
+        display: block !important;
+    }
+
+    .gm-only,
+    .sheet-section label,
+    .sheet-section textarea,
+    .sheet-section input,
+    .sheet-section select,
+    .field-error {
+        display: none !important;
+    }
+
+    h1, h2, h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .sheet-item, .objective-row, .print-sheet-header {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+    }
+
+    .print-header p, .print-sheet-header p {
+        margin: 0 0 4px;
+    }
+
+    .print-footer, .print-sheet-footer {
+        margin-top: 18px;
+        padding-top: 8px;
+        border-top: 1px solid #000;
+        font-style: italic;
+        color: #000;
+    }
+
+    .sheet-section, .print-sheet {
+        box-shadow: none;
+        margin-bottom: 12px;
+    }
+
+    .print-sheet {
+        border: none;
+        padding: 0;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .print-sheet:last-of-type {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .print-sheet.print-unselected {
+        display: none !important;
+    }
+
+    .print-picker-panel, .print-banner {
+        display: none !important;
+    }
+
+    .sheet-section h2 {
+        color: #000;
+    }
+
+    .sheet-item .item-text, .objective-body {
+        color: #000;
+    }
+
+    .badge {
+        font-weight: bold;
     }
 }
