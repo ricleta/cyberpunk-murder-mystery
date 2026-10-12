@@ -66,12 +66,7 @@ def build_master(session):
 
     relationships = Relationship.query.filter_by(session_id=session.id).order_by(
         Relationship.source_character_id, Relationship.target_character_id).all()
-    rel_rows = []
-    for r in relationships:
-        row = serialize_relationship(r, names)
-        row['source_name'] = names.get(r.source_character_id)
-        row['target_name'] = names.get(r.target_character_id)
-        rel_rows.append(row)
+    rel_rows = [serialize_relationship(r, names) for r in relationships]
 
     objectives = Objective.query.filter_by(session_id=session.id).order_by(
         Objective.character_id, Objective.sort_order, Objective.created_at).all()

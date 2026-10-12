@@ -62,11 +62,13 @@ def create_app(config_class=Config):
     # Validate data files and templates at startup (fail loudly)
     from generation.secret_templates import validate_secret_templates
     from generation.objective_templates import validate_objective_templates
+    from generation.compose import validate_compose_templates
     from services.lifepath_data import load_lifepath_data
     with app.app_context():
         load_lifepath_data(reload=True)
         validate_secret_templates()
         validate_objective_templates()
+        validate_compose_templates()
     from routes.auth_routes import bp as auth_bp
     from routes.session_routes import bp as session_bp
     from routes.character_routes import bp as character_bp

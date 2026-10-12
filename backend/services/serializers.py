@@ -121,7 +121,9 @@ def serialize_relationship(r, names):
         'rel_type': r.rel_type,
         'description_source': resolve_names(r.description_source, names),
         'description_target': resolve_names(r.description_target, names),
-        'is_symmetric': r.is_symmetric
+        'is_symmetric': r.is_symmetric,
+        'source_name': names.get(r.source_character_id),
+        'target_name': names.get(r.target_character_id)
     }
 
 

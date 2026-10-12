@@ -1,0 +1,115 @@
+{
+  "_comment": "Compose from Lifepath. fields: every Lifepath option id of the seven fields maps to a short 'phrase' that slots into a sentence and a 1-3 word 'trait'. descriptionGrammar: sentence slots with 2-3 variants each (second person, never uses the character's name). Placeholders are the seven field names. Do not apply Tracery modifiers.",
+  "fields": {
+    "personality": {
+      "shy_and_secretive": { "phrase": "a shy, secretive loner who keeps every card close", "trait": "secretive" },
+      "rebellious_antisocial_violent": { "phrase": "a rebellious, antisocial brawler with a short fuse", "trait": "violent streak" },
+      "arrogant_proud_aloof": { "phrase": "an arrogant, aloof presence who looks down on the whole room", "trait": "proud" },
+      "moody_rash_headstrong": { "phrase": "a moody, headstrong hothead who acts first and thinks later", "trait": "rash" },
+      "picky_fussy_nervous": { "phrase": "a picky, fussy bundle of nerves", "trait": "nervous" },
+      "stable_and_serious": { "phrase": "a steady, serious type nobody has ever seen panic", "trait": "unshakeable" },
+      "silly_and_fluff_headed": { "phrase": "a silly, fluff-headed joker who laughs at the wrong moments", "trait": "flighty" },
+      "sneaky_and_deceptive": { "phrase": "a sneaky, smiling liar who always has an angle", "trait": "deceptive" },
+      "intellectual_and_detached": { "phrase": "a cool, detached thinker who studies people like data", "trait": "detached" },
+      "friendly_and_outgoing": { "phrase": "a friendly, outgoing charmer who knows everyone's name", "trait": "outgoing" }
+    },
+    "clothing_style": {
+      "generic_chic": { "phrase": "bland, modular off-the-rack chic that slides past a second glance", "trait": "inconspicuous" },
+      "leisurewear": { "phrase": "loose, comfortable leisurewear built for moving fast", "trait": "athletic" },
+      "urban_flash": { "phrase": "flashy streetwear wired with cheap tech and loud color", "trait": "flashy" },
+      "businesswear": { "phrase": "sharp businesswear cut to project authority", "trait": "commanding" },
+      "high_fashion": { "phrase": "exclusive designer couture that costs more than most apartments", "trait": "couture" },
+      "bohemian": { "phrase": "mismatched bohemian layers and retro, free-spirited cuts", "trait": "free-spirited" },
+      "bag_lady_chic": { "phrase": "ragged, scavenged layers that mark you as a vagrant", "trait": "ragged" },
+      "gang_colors": { "phrase": "dangerous gang colors worn like a warning", "trait": "gang-marked" },
+      "nomad_leathers": { "phrase": "rugged nomad leathers scuffed by a thousand highways", "trait": "road-worn" },
+      "asia_pop": { "phrase": "bright, costume-like Asia Pop gear with a youthful edge", "trait": "youthful" }
+    },
+    "hairstyle": {
+      "mohawk": { "phrase": "a tall, stiff mohawk", "trait": "mohawked" },
+      "long_and_ratty": { "phrase": "long, ratty hair that hasn't met a brush in weeks", "trait": "unkempt" },
+      "short_and_spiked": { "phrase": "short, gelled spikes", "trait": "spike-haired" },
+      "wild_and_all_over": { "phrase": "a wild mess going in every direction", "trait": "wild-haired" },
+      "bald": { "phrase": "a bare, polished scalp", "trait": "bald" },
+      "striped": { "phrase": "hair striped in two clashing colors", "trait": "striped hair" },
+      "wild_colors": { "phrase": "hair dyed in wild neon colors", "trait": "neon hair" },
+      "neat_and_short": { "phrase": "neat, short hair with every strand in place", "trait": "well-groomed" },
+      "short_curly": { "phrase": "short, tight curls", "trait": "curly-haired" },
+      "long_straight": { "phrase": "long, straight hair that falls like a curtain", "trait": "long-haired" }
+    },
+    "affectation": {
+      "tattoos": { "phrase": "the crawl of tattoos up your arms", "trait": "tattooed" },
+      "mirrorshades": { "phrase": "the glint of mirrorshades", "trait": "mirrorshades" },
+      "ritual_scars": { "phrase": "the pattern of ritual scars", "trait": "scarred" },
+      "spiked_gloves": { "phrase": "the bite of spiked gloves", "trait": "spiked gloves" },
+      "nose_rings": { "phrase": "the flash of nose rings", "trait": "pierced nose" },
+      "tongue_or_other_piercings": { "phrase": "the click of a tongue piercing", "trait": "pierced" },
+      "strange_fingernail_implants": { "phrase": "the hum of strange fingernail implants", "trait": "clawed" },
+      "spiked_boots_or_heels": { "phrase": "the rap of spiked boots on concrete", "trait": "spiked boots" },
+      "fingerless_gloves": { "phrase": "the creak of fingerless gloves", "trait": "fingerless gloves" },
+      "strange_contacts": { "phrase": "the stare of strange contact lenses", "trait": "odd-eyed" }
+    },
+    "value_most": {
+      "money": { "phrase": "hard cash", "trait": "mercenary" },
+      "honor": { "phrase": "a spotless sense of honor", "trait": "honorable" },
+      "your_word": { "phrase": "keeping your word", "trait": "word-bound" },
+      "honesty": { "phrase": "blunt, unflinching honesty", "trait": "blunt" },
+      "knowledge": { "phrase": "knowledge, whatever it costs", "trait": "curious" },
+      "vengeance": { "phrase": "vengeance", "trait": "vindictive" },
+      "love": { "phrase": "love", "trait": "devoted" },
+      "power": { "phrase": "power", "trait": "power-hungry" },
+      "family": { "phrase": "family", "trait": "family-first" },
+      "friendship": { "phrase": "friendship", "trait": "loyal friend" }
+    },
+    "life_goals": {
+      "get_rid_of_reputation": { "phrase": "to scrub a bad reputation clean", "trait": "reputation-haunted" },
+      "gain_power_and_control": { "phrase": "to take power and control", "trait": "ambitious" },
+      "get_off_the_street": { "phrase": "to get off the street, whatever it takes", "trait": "street-weary" },
+      "cause_pain": { "phrase": "to make anyone who crosses you suffer", "trait": "merciless" },
+      "forget_the_past": { "phrase": "to outlive your past and forget it", "trait": "past-haunted" },
+      "hunt_down_enemies": { "phrase": "to hunt down whoever wrecked your life", "trait": "relentless" },
+      "get_what_is_mine": { "phrase": "to take back what is rightfully yours", "trait": "rightful claimant" },
+      "save_someone": { "phrase": "to save the people your past left behind", "trait": "protective" },
+      "gain_fame": { "phrase": "to earn fame and recognition", "trait": "fame-chasing" },
+      "become_feared": { "phrase": "to become feared and respected", "trait": "intimidating" }
+    },
+    "childhood_environment": {
+      "safe_corp_zone": { "phrase": "a sheltered childhood in a safe Corporate Zone, ferried to school in a bulletproof car", "trait": "corp-raised" },
+      "nomad_pack_traveling": { "phrase": "a childhood on the move with a Nomad pack, town to town", "trait": "nomad-born" },
+      "decaying_neighborhood": { "phrase": "a childhood in a decaying, once-upscale neighborhood, holding off the gangs to survive", "trait": "neighborhood survivor" },
+      "combat_zone": { "phrase": "a childhood in the Combat Zone, squatting in a wrecked building", "trait": "combat-zone kid" },
+      "huge_megastructure": { "phrase": "a childhood inside a Megastructure ruled by a gang or a Corp", "trait": "megastructure kid" },
+      "ruins": { "phrase": "a childhood in the ruins of a deserted city", "trait": "ruin-raised" },
+      "corp_town": { "phrase": "a childhood on the fringes of a Corporate-controlled town", "trait": "fringe-born" },
+      "cult": { "phrase": "a childhood in a religious cult, cut off from the world", "trait": "cult-raised" },
+      "research_facility": { "phrase": "a childhood in a Corporate research facility", "trait": "lab-raised" },
+      "hospital_or_orphanage": { "phrase": "a childhood in an orphanage or medical facility", "trait": "institution-raised" }
+    }
+  },
+  "descriptionGrammar": {
+    "origin": [
+      "#sentence1# #sentence2# #sentence3#",
+      "#sentence1# #sentence2# #sentence3# #sentence4#"
+    ],
+    "sentence1": [
+      "You are #personality#, and you dress in #clothing_style#.",
+      "People take one look at you and see #personality#, wrapped in #clothing_style#.",
+      "Everything about you says #personality#, right down to #clothing_style#."
+    ],
+    "sentence2": [
+      "Up top you wear #hairstyle#, and #affectation# is the detail people remember.",
+      "You wear #hairstyle#, and people remember #affectation# long after you leave.",
+      "Between #hairstyle# and #affectation#, nobody forgets your face."
+    ],
+    "sentence3": [
+      "You value #value_most# above almost everything, and you are determined #life_goals#.",
+      "You live for #value_most#, and all you really want is #life_goals#.",
+      "You would give up almost anything for #value_most#, and deep down you have sworn #life_goals#."
+    ],
+    "sentence4": [
+      "You come from #childhood_environment#, and it still shows.",
+      "Behind you lies #childhood_environment#, and you have never quite shaken it.",
+      "Your past is #childhood_environment#, and you carry it everywhere."
+    ]
+  }
+}

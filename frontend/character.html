@@ -3,322 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Character Sheet</title>
+    <title>Character Sheet - Cyberpunk Murder Mystery</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .sheet-section {
-            border: 1px solid var(--primary-color);
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: rgba(252, 226, 5, 0.05);
-        }
-        .sheet-section h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
-        .list-item { display: flex; gap: 10px; margin-bottom: 10px; }
-        .list-item input { margin-bottom: 0; }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <main class="container">
+        <header class="page-header">
             <h1>Character Sheet: <span id="charNameDisplay">Loading...</span></h1>
-            <a href="#" id="backLink" style="color: var(--primary-color);">Back to Lobby</a>
-        </div>
-        
-        <div id="alertBox" class="alert"></div>
-        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-            <button id="saveBtn" style="flex: 1;">SAVE CHANGES</button>
-            <button id="editLifepathBtn" class="secondary-btn" style="flex: 1;">Edit Lifepath</button>
-        </div>
+            <nav class="nav-links" aria-label="Page">
+                <a href="#" id="backLink">Back to Lobby</a>
+            </nav>
+        </header>
 
-        <div class="character-grid">
-            <div class="sheet-section">
-                <h2>Description</h2>
-                <input type="text" id="displayName" placeholder="Character Name">
-                <p>Role: <strong id="roleDisplay" style="color: var(--secondary-color);">...</strong></p>
-                <textarea id="description" rows="5" placeholder="Character description / backstory..."></textarea>
+        <div id="alertBox" aria-live="polite" aria-atomic="true"></div>
+        <div id="sheetStatus"></div>
+
+        <div id="sheet" hidden>
+            <div class="toolbar no-print">
+                <button id="saveBtn" type="button">Save changes</button>
+                <a id="editLifepathLink" class="button-link" href="#">Edit Lifepath</a>
             </div>
 
-            <div class="sheet-section">
-                <h2>Traits</h2>
-                <textarea id="traits" rows="4" placeholder="Enter traits, separated by commas..."></textarea>
+            <div class="character-grid" style="margin-bottom: 20px;">
+                <section class="sheet-section" aria-labelledby="descriptionHeading" style="margin-bottom: 0;">
+                    <h2 id="descriptionHeading">Description</h2>
+                    <label for="displayName">Character name</label>
+                    <input type="text" id="displayName" maxlength="50" autocomplete="off" aria-describedby="nameError">
+                    <p id="nameError" class="field-error" hidden></p>
+                    <p>Role: <strong id="roleDisplay" class="role-tag">...</strong></p>
+                    <label for="description" style="margin-top: 12px;">Description / backstory</label>
+                    <textarea id="description" rows="6" maxlength="4000" aria-describedby="descriptionError composeHint"></textarea>
+                    <p id="descriptionError" class="field-error" hidden></p>
+                    <div class="no-print">
+                        <button id="composeBtn" type="button" class="secondary-btn inline-btn" aria-describedby="composeHint">Compose from Lifepath</button>
+                        <p id="composeHint" class="muted" style="margin: 8px 0 0; font-size: 0.85rem;">
+                            Suggests a description and traits from your Lifepath. Nothing is saved until you click Save changes.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="sheet-section" aria-labelledby="traitsHeading" style="margin-bottom: 0;">
+                    <h2 id="traitsHeading">Traits</h2>
+                    <label for="traits">Traits (separated by commas)</label>
+                    <textarea id="traits" rows="5" aria-describedby="traitsError"></textarea>
+                    <p id="traitsError" class="field-error" hidden></p>
+                    <p class="muted" style="font-size: 0.85rem;">Up to 20 traits, 60 characters each.</p>
+                </section>
             </div>
+
+            <section class="sheet-section" aria-labelledby="secretsHeading">
+                <h2 id="secretsHeading">Secrets &amp; Lies</h2>
+                <div id="secretsList"></div>
+            </section>
+
+            <section class="sheet-section" aria-labelledby="relationshipsHeading">
+                <h2 id="relationshipsHeading">Relationships</h2>
+                <div id="relationshipsList"></div>
+            </section>
+
+            <section class="sheet-section" aria-labelledby="objectivesHeading">
+                <h2 id="objectivesHeading">Objectives</h2>
+                <div id="objectivesList"></div>
+                <form id="addObjectiveForm" class="add-objective no-print">
+                    <div class="grow">
+                        <label for="newObjectiveText" class="visually-hidden">New objective</label>
+                        <input type="text" id="newObjectiveText" placeholder="New objective..." maxlength="500" autocomplete="off"
+                               aria-describedby="newObjectiveError">
+                        <p id="newObjectiveError" class="field-error" hidden></p>
+                    </div>
+                    <div>
+                        <label for="newObjectivePoints" class="visually-hidden">Points</label>
+                        <select id="newObjectivePoints">
+                            <option value="1">1 pt</option>
+                            <option value="2">2 pts</option>
+                            <option value="3">3 pts</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="addObjectiveBtn" class="secondary-btn">+ Add Objective</button>
+                </form>
+            </section>
         </div>
+    </main>
 
-        <div class="sheet-section">
-            <h2>Secrets & Lies</h2>
-            <div id="secretsList"></div>
-        </div>
-
-        <div class="sheet-section">
-            <h2>Relationships</h2>
-            <div id="relationshipsList"></div>
-            <!-- // TODO: later phase - add relationship editing UI -->
-        </div>
-
-        <div class="sheet-section">
-            <h2>Objectives</h2>
-            <div id="objectivesList"></div>
-            <div class="objective-row" style="background: none; padding-left: 0; padding-right: 0;">
-                <input type="text" id="newObjectiveText" placeholder="New objective..." style="flex-grow: 1;">
-                <select id="newObjectivePoints">
-                    <option value="1">1 pt</option>
-                    <option value="2">2 pts</option>
-                    <option value="3">3 pts</option>
-                </select>
-                <button class="secondary-btn" id="addObjectiveBtn">+ Add Objective</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { checkAuth } from './js/auth.js';
-        import { apiFetch } from './js/api.js';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('session');
-        const charId = urlParams.get('char');
-        let isGm = false;
-
-        document.getElementById('backLink').href = `lobby.html?id=${sessionId}`;
-
-        const alertBox = document.getElementById('alertBox');
-        function showAlert(msg) {
-            alertBox.textContent = msg;
-            alertBox.style.display = 'block';
-            setTimeout(() => alertBox.style.display='none', 3000);
-        }
-
-        // --- Objectives (Objective table, edited through the /objectives endpoints) ---
-        const objectivesUrl = `/sessions/${sessionId}/objectives`;
-
-        function pointsLabel(points) {
-            return `${points} ${points === 1 ? 'pt' : 'pts'}`;
-        }
-
-        function pointsSelect(selected) {
-            const select = document.createElement('select');
-            [1, 2, 3].forEach(n => {
-                const opt = document.createElement('option');
-                opt.value = n;
-                opt.textContent = pointsLabel(n);
-                opt.selected = n === selected;
-                select.appendChild(opt);
-            });
-            return select;
-        }
-
-        function smallButton(label, onClick) {
-            const btn = document.createElement('button');
-            btn.className = 'secondary-btn';
-            btn.textContent = label;
-            btn.addEventListener('click', onClick);
-            return btn;
-        }
-
-        function renderObjectiveRow(o) {
-            const row = document.createElement('div');
-            row.className = 'objective-row';
-
-            const badge = document.createElement('span');
-            badge.className = 'points-badge';
-            badge.textContent = pointsLabel(o.points);
-
-            const body = document.createElement('div');
-            body.className = 'objective-body';
-            body.textContent = o.text;
-            // gm_hint is only ever sent to the GM
-            if (o.gm_hint) {
-                const details = document.createElement('details');
-                details.className = 'objective-meta';
-                const summary = document.createElement('summary');
-                summary.textContent = 'GM hint';
-                details.appendChild(summary);
-                details.appendChild(document.createTextNode(o.gm_hint));
-                body.appendChild(details);
-            }
-
-            row.append(badge, body,
-                smallButton('Edit', () => row.replaceWith(renderObjectiveEditor(o))),
-                smallButton('X', () => deleteObjective(o)));
-            return row;
-        }
-
-        function renderObjectiveEditor(o) {
-            const row = document.createElement('div');
-            row.className = 'objective-row';
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = o.text;
-            input.style.flexGrow = '1';
-            const select = pointsSelect(o.points);
-
-            row.append(input, select,
-                smallButton('Save', async () => {
-                    try {
-                        await apiFetch(`${objectivesUrl}/${o.id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({ text: input.value, points: parseInt(select.value, 10) })
-                        });
-                        await loadObjectives();
-                    } catch (err) {
-                        showAlert(err.message);
-                    }
-                }),
-                smallButton('Cancel', () => row.replaceWith(renderObjectiveRow(o))));
-            return row;
-        }
-
-        async function deleteObjective(o) {
-            if (!confirm('Delete this objective?')) return;
-            try {
-                await apiFetch(`${objectivesUrl}/${o.id}`, { method: 'DELETE' });
-                await loadObjectives();
-            } catch (err) {
-                showAlert(err.message);
-            }
-        }
-
-        async function loadObjectives() {
-            const container = document.getElementById('objectivesList');
-            try {
-                // Players always get only their own objectives; the filter is for the GM.
-                const data = await apiFetch(`${objectivesUrl}?character_id=${charId}`);
-                container.innerHTML = '';
-                if (data.objectives.length === 0) {
-                    container.innerHTML = '<p style="color: #999;">No objectives yet.</p>';
-                }
-                data.objectives.forEach(o => container.appendChild(renderObjectiveRow(o)));
-            } catch (e) {
-                console.error("Failed to load objectives:", e);
-            }
-        }
-
-        document.getElementById('addObjectiveBtn').addEventListener('click', async () => {
-            const textInput = document.getElementById('newObjectiveText');
-            const text = textInput.value.trim();
-            if (!text) {
-                showAlert('Enter the objective text first.');
-                return;
-            }
-            try {
-                await apiFetch(objectivesUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        character_id: charId,
-                        text,
-                        points: parseInt(document.getElementById('newObjectivePoints').value, 10)
-                    })
-                });
-                textInput.value = '';
-                await loadObjectives();
-            } catch (err) {
-                showAlert(err.message);
-            }
-        });
-
-        async function loadData() {
-            try {
-                // Determine if GM to change back link if needed
-                const session = await apiFetch(`/sessions/${sessionId}`);
-                const user = await checkAuth();
-                isGm = session.gm_id === user.id;
-                if (isGm) {
-                    document.getElementById('backLink').href = `master.html?id=${sessionId}`;
-                }
-
-                const char = await apiFetch(`/sessions/${sessionId}/characters/${charId}`);
-                
-                document.getElementById('charNameDisplay').textContent = char.display_name || 'Unnamed';
-                document.getElementById('displayName').value = char.display_name || '';
-                document.getElementById('roleDisplay').textContent = (char.role_key || 'UNKNOWN').toUpperCase();
-                document.getElementById('description').value = char.description || '';
-                document.getElementById('traits').value = (char.traits || []).join(', ');
-
-                const secContainer = document.getElementById('secretsList');
-                secContainer.innerHTML = '';
-                const secrets = char.secrets || [];
-                if (secrets.length === 0) {
-                    secContainer.innerHTML = '<p style="color: #999;">No secrets generated yet.</p>';
-                }
-                secrets.forEach(s => {
-                    const p = document.createElement('p');
-                    p.textContent = (s.about_self ? '🔒 ' : '👁 ') + s.text;
-                    p.style.padding = '5px 10px';
-                    p.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                    p.style.marginBottom = '5px';
-                    p.style.borderRadius = '3px';
-                    secContainer.appendChild(p);
-                });
-                await loadObjectives();
-
-                // Load generated relationships
-                try {
-                    const relsData = await apiFetch(`/sessions/${sessionId}/relationships`);
-                    const relContainer = document.getElementById('relationshipsList');
-                    relContainer.innerHTML = '';
-                    
-                    let foundAny = false;
-                    if (relsData.relationships && relsData.relationships.length > 0) {
-                        relsData.relationships.forEach(r => {
-                            let text = '';
-                            if (r.source_character_id === char.id) text = r.description_source;
-                            else if (r.target_character_id === char.id) text = r.description_target;
-                            
-                            if (text) {
-                                foundAny = true;
-                                const p = document.createElement('p');
-                                p.textContent = text;
-                                p.style.padding = '5px 10px';
-                                p.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                                p.style.marginBottom = '5px';
-                                p.style.borderRadius = '3px';
-                                relContainer.appendChild(p);
-                            }
-                        });
-                    }
-                    if (!foundAny) {
-                        relContainer.innerHTML = '<p style="color: #999;">No relationships generated yet.</p>';
-                    }
-                } catch (e) {
-                    console.error("Failed to load relationships:", e);
-                }
-
-            } catch (err) {
-                showAlert(err.message);
-            }
-        }
-
-        document.getElementById('saveBtn').addEventListener('click', async () => {
-            const traitsArray = document.getElementById('traits').value.split(',').map(t => t.trim()).filter(t => t);
-            
-            const payload = {
-                display_name: document.getElementById('displayName').value,
-                description: document.getElementById('description').value,
-                traits: traitsArray
-            };
-
-            try {
-                await apiFetch(`/sessions/${sessionId}/characters/${charId}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(payload)
-                });
-                document.getElementById('charNameDisplay').textContent = payload.display_name || 'Unnamed';
-                showAlert('Saved successfully!');
-            } catch (err) {
-                showAlert(err.message);
-            }
-        });
-
-        document.getElementById('editLifepathBtn').addEventListener('click', () => {
-            window.location.href = `build.html?session=${sessionId}&char=${charId}`;
-        });
-
-        if (!sessionId || !charId) {
-            window.location.href = 'dashboard.html';
-        } else {
-            loadData();
-        }
-    </script>
+    <script type="module" src="js/pages/character.js"></script>
 </body>
 </html>

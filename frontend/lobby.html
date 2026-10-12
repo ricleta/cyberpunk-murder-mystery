@@ -3,271 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Session Lobby</title>
+    <title>Session Lobby - Cyberpunk Murder Mystery</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <main class="container">
+        <header class="page-header">
             <h1 id="sessionNameTitle">Lobby</h1>
-            <a href="dashboard.html" style="color: var(--primary-color);">Back to Dashboard</a>
-        </div>
+            <nav class="nav-links" aria-label="Page">
+                <a href="dashboard.html">Back to Dashboard</a>
+            </nav>
+        </header>
 
-        <div id="alertBox" class="alert"></div>
+        <div id="alertBox" aria-live="polite" aria-atomic="true"></div>
 
-        <div class="panel" style="text-align: center;">
-            <h3>Join Code</h3>
-            <h1 id="joinCodeDisplay" style="font-size: 3rem; letter-spacing: 5px; color: var(--secondary-color);">---</h1>
-        </div>
+        <section class="panel" style="text-align: center;" aria-labelledby="joinCodeHeading">
+            <h2 id="joinCodeHeading">Join Code</h2>
+            <p id="joinCodeDisplay" class="join-code">---</p>
+            <div id="joinCodeActions"></div>
+        </section>
 
-        <div id="gmControls" class="panel" style="display: none; border-color: var(--secondary-color);">
-            <h2 style="color: var(--secondary-color);">GM Controls</h2>
-            <a href="#" id="masterViewLink" style="display: inline-block; margin-bottom: 15px; color: var(--primary-color);">View Master Character List</a>
-        </div>
-        
-        <div id="playerControls" class="panel" style="display: none;">
-            <h2>Your Status</h2>
-            <p id="playerStatus">Waiting for GM to assign a role...</p>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button id="viewSheetBtn" style="display: none; flex: 1;">View Character Sheet</button>
-                <button id="lifepathBtn" style="display: none; flex: 1;">Lifepath Choices</button>
-            </div>
-        </div>
+        <section id="playerPanel" class="panel" hidden aria-labelledby="playerHeading">
+            <h2 id="playerHeading">Your Status</h2>
+            <div id="playerStatus"></div>
+        </section>
 
-        <div class="panel">
-            <h2>Connected Users</h2>
-            <ul id="membersList" style="list-style: none; padding: 0;">
-                <li>Loading...</li>
-            </ul>
-        </div>
-        
-        <div id="gmReadinessPanel" class="panel" style="display: none; border-color: var(--secondary-color);">
-            <h2 style="color: var(--secondary-color);">Lifepath Readiness</h2>
-            <p id="allReadyStatus">Loading status...</p>
-            <ul id="readinessList" style="list-style: none; padding: 0;">
-            </ul>
-            <button id="generateRelationshipsBtn" disabled style="margin-top: 15px; width: 100%;">Generate Game</button>
-        </div>
-    </div>
+        <section class="panel" aria-labelledby="membersHeading">
+            <h2 id="membersHeading">Connected Users</h2>
+            <div id="membersList"></div>
+        </section>
 
-    <script type="module">
-        import { checkAuth } from './js/auth.js';
-        import { apiFetch } from './js/api.js';
+        <section id="gmPanel" class="panel panel-gm" hidden aria-labelledby="generationHeading">
+            <h2 id="generationHeading">Game Generation</h2>
+            <div id="generationPanel"></div>
+        </section>
+    </main>
 
-        let currentUser = null;
-        let session = null;
-        let members = [];
-        let characters = []; // for GM
-        let roles = [];
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('id');
-
-        const alertBox = document.getElementById('alertBox');
-        function showAlert(msg) {
-            alertBox.textContent = msg;
-            alertBox.style.display = 'block';
-        }
-
-        async function fetchRoles() {
-            try {
-                const res = await fetch('data/roles.json');
-                roles = await res.json();
-            } catch (e) {
-                console.error('Failed to load roles');
-            }
-        }
-
-        async function loadData() {
-            try {
-                session = await apiFetch(`/sessions/${sessionId}`);
-                document.getElementById('sessionNameTitle').textContent = session.name;
-                document.getElementById('joinCodeDisplay').textContent = session.join_code;
-
-                const membersData = await apiFetch(`/sessions/${sessionId}/members`);
-                members = membersData.members;
-
-                const isGm = session.gm_id === currentUser.id;
-
-                if (isGm) {
-                    document.getElementById('gmControls').style.display = 'block';
-                    document.getElementById('masterViewLink').href = `master.html?id=${sessionId}`;
-                    const charsData = await apiFetch(`/sessions/${sessionId}/characters`);
-                    characters = charsData.characters;
-                } else {
-                    document.getElementById('playerControls').style.display = 'block';
-                    try {
-                        const myChar = await apiFetch(`/sessions/${sessionId}/characters/mine`);
-                        if (myChar) {
-                            document.getElementById('playerStatus').innerHTML = `Role assigned: <strong style="color: var(--secondary-color); text-transform: uppercase;">${myChar.role_key}</strong>`;
-                            
-                            const sheetBtn = document.getElementById('viewSheetBtn');
-                            sheetBtn.style.display = 'block';
-                            sheetBtn.onclick = () => window.location.href = `character.html?session=${sessionId}&char=${myChar.id}`;
-                            const lpBtn = document.getElementById('lifepathBtn');
-                            lpBtn.style.display = 'block';
-                            lpBtn.onclick = () => window.location.href = `build.html?session=${sessionId}&char=${myChar.id}`;
-                        }
-                    } catch (e) {
-                        // Not assigned yet
-                        if (!document.getElementById('myRoleSelect')) {
-                            document.getElementById('playerStatus').innerHTML = `
-                                <div style="display: flex; gap: 10px; margin-top: 10px; flex-direction: column;">
-                                    <input type="text" id="myCharName" placeholder="Character Name" oninput="checkFormReadiness()" style="margin: 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff;">
-                                    <select id="myRoleSelect" onchange="checkFormReadiness()" style="margin: 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff;">
-                                        <option value="">Select your role...</option>
-                                        ${roles.map(r => `<option value="${r.key}">${r.label}</option>`).join('')}
-                                    </select>
-                                    <button id="createCharBtn" onclick="assignRole()" style="margin: 0; padding: 10px;" disabled>Create Character</button>
-                                </div>
-                            `;
-                        }
-                    }
-                }
-
-                renderMembers(isGm);
-
-            } catch (err) {
-                showAlert(err.message);
-            }
-        }
-
-        function renderMembers(isGm) {
-            const list = document.getElementById('membersList');
-            list.innerHTML = '';
-            
-            members.forEach(m => {
-                const li = document.createElement('li');
-                li.style.padding = '10px';
-                li.style.borderBottom = '1px solid var(--border-color)';
-                li.style.display = 'flex';
-                li.style.justifyContent = 'space-between';
-                li.style.alignItems = 'center';
-
-                let html = `<span>${m.display_name} ${m.user_id === session.gm_id ? '(GM)' : ''}</span>`;
-                
-                if (isGm && m.user_id !== session.gm_id) {
-                    const char = characters.find(c => c.player_id === m.user_id);
-                    if (char) {
-                        html += `<span style="color: var(--primary-color); text-transform: uppercase;">${char.role_key || 'UNKNOWN'}</span>`;
-                    } else {
-                        html += `<span style="color: #666;">Waiting to pick...</span>`;
-                    }
-                }
-                
-                li.innerHTML = html;
-                list.appendChild(li);
-            });
-            
-            if (isGm) {
-                renderReadiness();
-            }
-        }
-
-        async function renderReadiness() {
-            try {
-                const status = await apiFetch(`/sessions/${sessionId}/lifepath-status`);
-                document.getElementById('gmReadinessPanel').style.display = 'block';
-                
-                const statusTxt = document.getElementById('allReadyStatus');
-                const genBtn = document.getElementById('generateRelationshipsBtn');
-                if (status.allComplete) {
-                    statusTxt.innerHTML = '<strong style="color: #00ff00;">All players are READY for Generation!</strong>';
-                    genBtn.disabled = false;
-                } else {
-                    statusTxt.innerHTML = '<strong style="color: var(--error-color);">Waiting on players to complete lifepaths...</strong>';
-                    genBtn.disabled = true;
-                }
-                
-                const rList = document.getElementById('readinessList');
-                rList.innerHTML = '';
-                status.members.forEach(m => {
-                    const li = document.createElement('li');
-                    li.style.padding = '5px 0';
-                    li.style.display = 'flex';
-                    li.style.justifyContent = 'space-between';
-                    const isReady = m.lifepath_complete ? '✅ Ready' : '❌ Incomplete';
-                    li.innerHTML = `<span>${m.player_display_name} (${m.role_key || 'No Role'})</span> <span>${isReady}</span>`;
-                    rList.appendChild(li);
-                });
-            } catch (err) {
-                console.error("Failed to load readiness status:", err);
-            }
-        }
-
-        window.checkFormReadiness = () => {
-            const nameInput = document.getElementById('myCharName');
-            const sel = document.getElementById('myRoleSelect');
-            const btn = document.getElementById('createCharBtn');
-            if (nameInput && sel && btn) {
-                btn.disabled = !(nameInput.value.trim() !== '' && sel.value !== '');
-            }
-        };
-
-        window.assignRole = async () => {
-            const sel = document.getElementById('myRoleSelect');
-            const nameInput = document.getElementById('myCharName');
-            const roleKey = sel.value;
-            const charName = nameInput ? nameInput.value.trim() : '';
-
-            if (!charName) {
-                showAlert("Please enter a character name.");
-                return;
-            }
-            if (!roleKey) {
-                showAlert("Please select a role.");
-                return;
-            }
-            
-            try {
-                await apiFetch(`/sessions/${sessionId}/characters`, {
-                    method: 'POST',
-                    body: JSON.stringify({ role_key: roleKey, display_name: charName })
-                });
-                const created = await apiFetch(`/sessions/${sessionId}/characters/mine`);
-                window.location.href = `build.html?session=${sessionId}&char=${created.id}`;
-            } catch (err) {
-                showAlert(err.message);
-            }
-        };
-
-        window.generateRelationships = async () => {
-            if (!confirm("Generate relationships, secrets and objectives? This will overwrite anything already generated.")) return;
-            const btn = document.getElementById('generateRelationshipsBtn');
-            btn.disabled = true;
-            btn.textContent = 'Generating...';
-            try {
-                const res = await apiFetch(`/sessions/${sessionId}/generate?regenerate=true`, { method: 'POST' });
-                showAlert(`Game generated: ${res.relationships} connections, ${res.secrets} secrets, ${res.objectives} objectives.`);
-                btn.textContent = 'Regenerate Game';
-                btn.disabled = false;
-            } catch (err) {
-                showAlert(err.message);
-                btn.disabled = false;
-                btn.textContent = 'Generate Game';
-            }
-        };
-
-        document.getElementById('generateRelationshipsBtn').addEventListener('click', window.generateRelationships);
-
-        async function init() {
-            if (!sessionId) {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-            currentUser = await checkAuth();
-            if (!currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
-            await fetchRoles();
-            await loadData();
-            
-            // Poll for updates every 5 seconds
-            setInterval(loadData, 5000);
-        }
-
-        init();
-    </script>
+    <script type="module" src="js/pages/lobby.js"></script>
 </body>
 </html>

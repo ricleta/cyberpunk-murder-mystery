@@ -7,152 +7,41 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <main class="container">
+        <header class="page-header">
             <h1>Dashboard</h1>
-            <button id="logoutBtn" class="secondary-btn" style="width: auto;">Logout</button>
-        </div>
+            <button id="logoutBtn" class="secondary-btn inline-btn" type="button">Logout</button>
+        </header>
 
-        <div id="alertBox" class="alert"></div>
+        <div id="alertBox" aria-live="polite" aria-atomic="true"></div>
 
         <div class="character-grid">
-            <div class="panel">
-                <h2>Join Session</h2>
+            <section class="panel" aria-labelledby="joinHeading">
+                <h2 id="joinHeading">Join Session</h2>
                 <form id="joinForm">
-                    <input type="text" id="joinCode" placeholder="Enter 6-character Join Code" maxlength="6" style="text-transform: uppercase;" required>
-                    <button type="submit">Join</button>
+                    <label for="joinCode">Join code</label>
+                    <input type="text" id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters"
+                           style="text-transform: uppercase;" required>
+                    <button type="submit" id="joinSubmit">Join</button>
                 </form>
-            </div>
+            </section>
 
-            <div class="panel">
-                <h2>Create Session</h2>
+            <section class="panel" aria-labelledby="createHeading">
+                <h2 id="createHeading">Create Session</h2>
                 <form id="createForm">
-                    <input type="text" id="sessionName" placeholder="Session Name" required>
-                    <button type="submit">Create New Session</button>
+                    <label for="sessionName">Session name</label>
+                    <input type="text" id="sessionName" maxlength="80" autocomplete="off" required>
+                    <button type="submit" id="createSubmit">Create New Session</button>
                 </form>
-            </div>
+            </section>
         </div>
-        </div>
 
-        <div class="panel" style="margin-top: 20px;">
-            <h2>My Sessions</h2>
-            <ul id="mySessionsList" style="list-style: none; padding: 0;">
-                <li>Loading...</li>
-            </ul>
-        </div>
-    </div>
+        <section class="panel" style="margin-top: 20px;" aria-labelledby="mySessionsHeading">
+            <h2 id="mySessionsHeading">My Sessions</h2>
+            <div id="mySessions"></div>
+        </section>
+    </main>
 
-    <script type="module">
-        import { logout, checkAuth } from './js/auth.js';
-        import { apiFetch } from './js/api.js';
-
-        const alertBox = document.getElementById('alertBox');
-        function showAlert(msg) {
-            alertBox.textContent = msg;
-            alertBox.style.display = 'block';
-        }
-        let currentUserId = null;
-
-        async function init() {
-            const user = await checkAuth();
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
-            currentUserId = user.id;
-
-            document.getElementById('logoutBtn').addEventListener('click', logout);
-
-            document.getElementById('joinForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const code = document.getElementById('joinCode').value.toUpperCase();
-                try {
-                    const data = await apiFetch('/sessions/join', {
-                        method: 'POST',
-                        body: JSON.stringify({ join_code: code })
-                    });
-                    window.location.href = `lobby.html?id=${data.session_id}`;
-                } catch (err) {
-                    showAlert(err.message);
-                }
-            });
-
-            document.getElementById('createForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('sessionName').value;
-                try {
-                    const data = await apiFetch('/sessions', {
-                        method: 'POST',
-                        body: JSON.stringify({ name, auto_relationships: true })
-                    });
-                    window.location.href = `lobby.html?id=${data.id}`;
-                } catch (err) {
-                    showAlert(err.message);
-                }
-            });
-
-            await loadMySessions();
-        }
-
-        async function loadMySessions() {
-            try {
-                const data = await apiFetch('/sessions/mine');
-                const list = document.getElementById('mySessionsList');
-                list.innerHTML = '';
-                
-                if (data.sessions.length === 0) {
-                    list.innerHTML = '<li style="color: #666;">You haven\'t joined any sessions yet.</li>';
-                    return;
-                }
-
-                data.sessions.forEach(s => {
-                    const li = document.createElement('li');
-                    li.style.padding = '15px';
-                    li.style.borderBottom = '1px solid var(--border-color)';
-                    li.style.display = 'flex';
-                    li.style.justifyContent = 'space-between';
-                    li.style.alignItems = 'center';
-                    li.style.cursor = 'pointer';
-                    li.style.transition = 'background-color 0.2s';
-                    li.onmouseover = () => li.style.backgroundColor = 'rgba(252, 226, 5, 0.1)';
-                    li.onmouseout = () => li.style.backgroundColor = 'transparent';
-                    li.onclick = () => window.location.href = `lobby.html?id=${s.id}`;
-
-                    li.innerHTML = `
-                        <div>
-                            <strong style="font-size: 1.2rem; display: block;">${s.name}</strong>
-                            <span style="font-size: 0.9rem; color: #888;">Code: ${s.join_code} | Status: ${s.status}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <span style="color: var(--primary-color); font-weight: bold;">${s.is_gm ? 'GM' : 'Player'}</span>
-                            <button class="secondary-btn session-action-btn" style="width: auto; margin: 0; padding: 6px 12px;">${s.is_gm ? 'Delete' : 'Leave'}</button>
-                        </div>
-                    `;
-                    li.querySelector('.session-action-btn').onclick = async (e) => {
-                        e.stopPropagation();
-                        const msg = s.is_gm
-                            ? `Delete "${s.name}" and all its characters? This cannot be undone.`
-                            : `Leave "${s.name}"? Your character will be deleted.`;
-                        if (!confirm(msg)) return;
-                        try {
-                            if (s.is_gm) {
-                                await apiFetch(`/sessions/${s.id}`, { method: 'DELETE' });
-                            } else {
-                                await apiFetch(`/sessions/${s.id}/members/${currentUserId}`, { method: 'DELETE' });
-                            }
-                            await loadMySessions();
-                        } catch (err) {
-                            showAlert(err.message);
-                        }
-                    };
-                    list.appendChild(li);
-                });
-            } catch (err) {
-                document.getElementById('mySessionsList').innerHTML = `<li style="color: var(--error-color);">Error loading sessions: ${err.message}</li>`;
-            }
-        }
-
-        init();
-    </script>
+    <script type="module" src="js/pages/dashboard.js"></script>
 </body>
 </html>
