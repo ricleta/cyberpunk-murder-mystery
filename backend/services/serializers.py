@@ -8,7 +8,7 @@ name map built for the response (``session_name_map``), so a renamed character s
 everywhere at once and no raw token ever leaves the API.
 """
 from extensions import db
-from models import Secret, SecretKnowledge, Objective
+from models import Relationship, Secret, SecretKnowledge, Objective
 from generation.name_tokens import resolve_names, session_name_map
 
 SHARED_LIFEPATH_FIELDS = (
@@ -178,4 +178,38 @@ def serialize_secret_for_knower(s, names):
         'subject_name': names.get(s.subject_character_id),
         'kind': s.kind,
         'text_knower': resolve_names(s.text_knower, names)
+    }
+
+
+def serialize_player_sheet(c, session):
+    """Exactly what the player sees on their own sheet, for the owner AND for the GM
+    (so the GM can print handouts without leaking anything GM-only). Built from the lean
+    player shapes: no template_id / category, severity on own secrets only, no killer
+    flag, GM hints, link or related_* fields, player ids or generation data."""
+    names = session_name_map(c.session_id)
+    secrets = get_character_secrets(c, names, for_gm=False)
+    relationships = []
+    for r in Relationship.query.filter_by(session_id=c.session_id).all():
+        if r.source_character_id == c.id:
+            relationships.append({'other_name': names.get(r.target_character_id), 'rel_type': r.rel_type,
+                                  'text': resolve_names(r.description_source, names)})
+        elif r.target_character_id == c.id:
+            relationships.append({'other_name': names.get(r.source_character_id), 'rel_type': r.rel_type,
+                                  'text': resolve_names(r.description_target, names)})
+    generated = (session.status or 'lobby') != 'lobby' or bool(relationships or secrets) or \
+        Secret.query.filter_by(session_id=c.session_id).first() is not None
+    return {
+        'session': {'name': session.name, 'status': session.status},
+        'generated': generated,
+        'character': {'id': c.id, 'display_name': c.display_name, 'role_key': c.role_key,
+                      'description': c.description or '', 'traits': c.traits or []},
+        'secrets': {
+            'own': [{'id': s['id'], 'kind': s['kind'], 'text': s['text'], 'severity': s['severity']}
+                    for s in secrets if s['about_self']],
+            'known': [{'id': s['id'], 'kind': s['kind'], 'text': s['text'], 'subject_name': s['subject_name']}
+                      for s in secrets if not s['about_self']],
+        },
+        'relationships': relationships,
+        'objectives': [{'id': o['id'], 'text': o['text'], 'points': o['points'], 'kind': o['kind']}
+                       for o in get_character_objectives(c, False, names)],
     }

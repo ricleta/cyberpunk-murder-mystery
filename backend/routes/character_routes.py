@@ -8,7 +8,7 @@ from auth import require_auth, is_session_gm, can_view_character, can_edit_chara
 from services import validation
 from services.cleanup import delete_characters
 from services.character_updates import apply_character_update
-from services.serializers import serialize_character
+from services.serializers import serialize_character, serialize_player_sheet
 from services.session_lock import ensure_unlocked
 
 bp = Blueprint('characters', __name__)
@@ -179,3 +179,18 @@ def compose_from_lifepath(session_id, character_id):
             return jsonify({'error': 'seed must be an integer'}), 400
 
     return jsonify(compose_suggestion(character, rng=rng)), 200
+
+
+@bp.route('/<session_id>/characters/<character_id>/sheet', methods=['GET'])
+@require_auth
+def get_player_sheet(session_id, character_id):
+    """What the player sees, even when the requester is the GM (safe to print)."""
+    character = Character.query.get(character_id)
+    if not character or character.session_id != session_id:
+        return jsonify({'error': 'Character not found'}), 404
+
+    if not can_view_character(g.current_user_id, character):
+        return jsonify({'error': 'Not authorized to view this character'}), 403
+
+    session = Session.query.get(session_id)
+    return jsonify(serialize_player_sheet(character, session)), 200
