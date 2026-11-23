@@ -672,6 +672,11 @@ dialog.import-dialog {
     flex-wrap: wrap;
 }
 
+.member-actions {
+    margin-top: 0;
+    align-items: center;
+}
+
 .button-row button, .button-row .button-link {
     width: auto;
     margin-bottom: 0;

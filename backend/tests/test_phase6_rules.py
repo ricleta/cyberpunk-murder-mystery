@@ -126,7 +126,11 @@ def test_roster_actions_are_locked_but_session_delete_is_not(client, app, auth):
     res = client.post('/api/sessions/join', json={'join_code': session.join_code}, headers=auth(chars[0].player_id))
     assert res.status_code == 200 and res.json['message'] == 'Already a member'
 
+    # kicking needs an explicit confirmation that the generated game is cleared
     res = client.delete(f'/api/sessions/{session.id}/members/{chars[1].player_id}', headers=auth(session.gm_id))
+    assert res.status_code == 409 and res.json['code'] == 'regeneration_required'
+    # a player cannot leave a generated game on their own
+    res = client.delete(f'/api/sessions/{session.id}/members/{chars[1].player_id}', headers=auth(chars[1].player_id))
     assert res.status_code == 409 and res.json['code'] == 'session_locked'
     res = client.delete(f'/api/sessions/{session.id}/characters/{chars[1].id}', headers=auth(session.gm_id))
     assert res.status_code == 409 and res.json['code'] == 'session_locked'
