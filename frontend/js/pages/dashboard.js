@@ -98,6 +98,11 @@ async function init() {
     });
 
     await loadSessions();
+
+    if (new URLSearchParams(window.location.search).get('removed')) {
+        showAlert('The GM removed you from that session.', 'info');
+        history.replaceState(null, '', 'dashboard.html');
+    }
 }
 
 init();

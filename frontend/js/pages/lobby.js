@@ -91,27 +91,113 @@ function renderHeader() {
 function renderMembers() {
     const { session, members, characters } = view;
     const isGm = session.gm_id === currentUser.id;
+    if (isGm && busyAction) return;   // never rebuild the Remove buttons under a running request
     const container = document.getElementById('membersList');
     const rows = members.map(m => ({
         id: m.user_id,
         name: m.display_name,
         gm: m.user_id === session.gm_id,
-        role: isGm ? (characters.find(c => c.player_id === m.user_id)?.role_key || null) : undefined
+        role: isGm ? (characters.find(c => c.player_id === m.user_id)?.role_key || null) : undefined,
+        character: isGm ? (characters.find(c => c.player_id === m.user_id)?.display_name || null) : undefined
     }));
-    renderIfChanged(container, rows, () => {
+    renderIfChanged(container, { rows, status: isGm ? session.status : null }, () => {
         if (rows.length === 0) {
             renderEmpty(container, 'Nobody has joined yet.', 'Share the join code above with your players.');
             return;
         }
         const list = el('ul', { class: 'plain-list' });
         rows.forEach(r => {
+            const canKick = isGm && !r.gm && (session.status === 'lobby' || session.status === 'generated');
             list.appendChild(el('li', { class: 'row-item' },
                 el('span', { text: r.gm ? `${r.name} (GM)` : r.name }),
                 isGm && !r.gm
-                    ? (r.role ? el('span', { class: 'role-tag', text: r.role }) : el('span', { class: 'muted', text: 'Waiting to pick...' }))
+                    ? el('span', { class: 'button-row member-actions' },
+                        r.role ? el('span', { class: 'role-tag', text: r.role }) : el('span', { class: 'muted', text: 'Waiting to pick...' }),
+                        canKick ? kickButton(r) : null)
                     : null));
         });
         container.appendChild(list);
+    });
+}
+
+// --- GM: removing players ---------------------------------------------------------------------
+
+function kickButton(row) {
+    const button = el('button', { class: 'secondary-btn danger-btn small-btn', text: 'Remove',
+        attrs: { type: 'button', 'aria-label': `Remove ${row.name} from the session` } });
+    button.addEventListener('click', () => kickPlayer(row, button));
+    return button;
+}
+
+function kickMessage(row, generated) {
+    const who = row.character ? `${row.name} and their character ${row.character}` : row.name;
+    if (!generated) {
+        return `Remove ${who} from the session? Their character is deleted. They can rejoin with the join code.`;
+    }
+    return `Remove ${who} from the session? The game has already been generated around every character, so `
+        + 'removing them deletes ALL relationships, secrets and objectives (including edits) and sends the game back to the lobby. '
+        + 'You will need to regenerate. Killer selections for the remaining characters are kept.';
+}
+
+async function deleteMember(row, generated) {
+    const url = `/sessions/${sid}/members/${encodeURIComponent(row.id)}` + (generated ? '?clear_generated=true' : '');
+    return apiFetch(url, { method: 'DELETE' });
+}
+
+async function kickPlayer(row, button) {
+    let generated = view.session.status === 'generated';
+    const ok = await confirmDialog(kickMessage(row, generated),
+        { title: `Remove ${row.name}?`, confirmLabel: generated ? 'Remove and clear game' : 'Remove player', danger: true });
+    if (!ok) return;
+
+    busyAction = true;
+    hideAlert();
+    let result = null;
+    await withBusy(button, 'Removing...', async () => {
+        try {
+            result = await deleteMember(row, generated);
+        } catch (err) {
+            if (err.code === 'regeneration_required' && !generated) {
+                // The game was generated since the page last refreshed: ask again with the full warning
+                generated = true;
+                const again = await confirmDialog(kickMessage(row, true),
+                    { title: 'The game has been generated', confirmLabel: 'Remove and clear game', danger: true });
+                if (again) {
+                    try { result = await deleteMember(row, true); } catch (e) { showAlert(e.message); }
+                }
+            } else {
+                showAlert(err.message);
+            }
+        }
+    });
+    busyAction = false;
+    if (!result) return;
+
+    await refresh({ force: true });
+    if (result.regeneration_required) {
+        await promptRegenerate(row);
+    } else {
+        showAlert(`${row.name} was removed from the session.`, 'success');
+    }
+}
+
+async function promptRegenerate(row) {
+    const reasons = view.readiness ? notReadyReason(readinessRows()) : [];
+    if (reasons.length) {
+        showAlert(`${row.name} was removed and the generated game was cleared. Regenerate once everyone is ready: ${reasons.join('; ')}.`);
+        return;
+    }
+    const ok = await confirmDialog(
+        `${row.name} was removed and the generated game was cleared. Players have no secrets, relationships or objectives until you regenerate. Regenerate now?`,
+        { title: 'Regenerate the game?', confirmLabel: 'Regenerate now', cancelLabel: 'Later' });
+    if (!ok) {
+        showAlert(`${row.name} was removed. The game is back in the lobby: generate it again before you play.`, 'info');
+        return;
+    }
+    await runPipeline(document.getElementById('generateBtn'), {
+        url: `/sessions/${sid}/generate`,
+        busyLabel: 'Generating...',
+        success: r => `${row.name} was removed and the game was regenerated: ${r.relationships} relationships, ${r.secrets} secrets, ${r.objectives} objectives.`
     });
 }
 
@@ -221,7 +307,8 @@ async function runPipeline(button, { url, busyLabel, success }) {
     busyAction = true;
     hideAlert();
     let succeeded = false;
-    await withBusy(button, busyLabel, async () => {
+    const run = fn => (button ? withBusy(button, busyLabel, fn) : fn());
+    await run(async () => {
         try {
             const result = await apiFetch(url, { method: 'POST' });
             showAlert(success(result), 'success');
@@ -361,6 +448,11 @@ async function refresh({ force = false } = {}) {
         pollFailures = 0;
         renderAll();
     } catch (err) {
+        if (err.status === 403 && view.session && view.session.gm_id !== currentUser.id) {
+            // The GM removed this player from the session
+            window.location.href = 'dashboard.html?removed=1';
+            return;
+        }
         pollFailures += 1;
         if (!view.session) {
             // First load failed: show an error with a retry instead of a blank page

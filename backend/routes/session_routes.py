@@ -1,14 +1,18 @@
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify, g, request, current_app
 import random
 import string
 from extensions import db
 from models import Session, SessionMember, User, Character, Secret, Relationship, Objective
 from auth import require_auth, is_session_gm
 from services import validation
-from services.cleanup import delete_characters
-from services.session_lock import ensure_unlocked
+from services.cleanup import delete_characters, clear_generated, clear_generation_metadata
+from services.errors import ApiError
+from services.session_lock import ensure_unlocked, is_locked, locked_error
 
 bp = Blueprint('sessions', __name__)
+
+# 409 code: kicking a player from a generated game needs clear_generated=true
+REGENERATION_REQUIRED = 'regeneration_required'
 
 def generate_join_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -170,15 +174,44 @@ def remove_member(session_id, user_id):
     if not member:
         return jsonify({'error': 'Member not found in session'}), 404
 
-    ensure_unlocked(session, 'The game has been generated, so players cannot be removed. '
-                             'Reset the game in the lobby first.')
+    kicked_by_gm = user_id != g.current_user_id
+    regeneration_required = False
+    if is_locked(session):
+        # A player cannot leave a generated game on their own: that would silently break
+        # everyone else's sheet. Only the GM can kick, and only by confirming the reset.
+        if not kicked_by_gm:
+            raise locked_error('The game has been generated, so you cannot leave it. '
+                               'Ask the GM to remove you.')
+        if session.status in ('active', 'closed'):
+            return jsonify({'error': f"Cannot remove players while the session is '{session.status}'"}), 409
+        if request.args.get('clear_generated', '').lower() not in ('true', '1'):
+            # The generated web of relationships, secrets and objectives is built around every
+            # character, so removing one invalidates all of it. Make the caller say so.
+            raise ApiError('Removing this player deletes all generated relationships, secrets and '
+                           'objectives, and the game must be regenerated. '
+                           'Repeat the request with clear_generated=true to confirm.',
+                           status=409, code=REGENERATION_REQUIRED)
+        regeneration_required = True
 
     chars = Character.query.filter_by(session_id=session_id, player_id=user_id).all()
-    delete_characters([c.id for c in chars])
-    db.session.delete(member)
-    db.session.commit()
+    try:
+        if regeneration_required:
+            clear_generated(session_id, relationships=True)
+            clear_generation_metadata(session)
+            session.status = 'lobby'
+        delete_characters([c.id for c in chars])
+        db.session.delete(member)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Removing member %s from session %s failed', user_id, session_id)
+        return jsonify({'error': 'Internal server error'}), 500
 
-    return jsonify({'message': 'Member removed successfully'}), 200
+    return jsonify({
+        'message': 'Member removed successfully',
+        'status': session.status,
+        'regeneration_required': regeneration_required,
+    }), 200
 
 @bp.route('/<session_id>', methods=['DELETE'])
 @require_auth

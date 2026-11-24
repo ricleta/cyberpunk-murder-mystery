@@ -36,6 +36,12 @@ pytest tests/e2e
 
 See `backend/DEPLOY.md` for deployment.
 
+## Removing players
+
+The GM can remove any player from the lobby's *Connected Users* list with *Remove*, at any time before the game is active. The player's character is deleted and they can rejoin with the join code.
+
+If the game has already been generated, the relationships, secrets and objectives were built around every character, so removing one clears all generated content (including objective edits) and sends the game back to the lobby, like *Reset to clean slate*. Killer selections for the remaining characters are kept. After the removal the GM is asked to regenerate straight away. Through the API this needs `DELETE /api/sessions/<id>/members/<user_id>?clear_generated=true`; without the flag the request is refused with `409 regeneration_required`. Players cannot leave a generated game on their own.
+
 ## Printing and backups
 
 - **Print / Save as PDF:** on your character page click *Print / Save as PDF* and choose "Save as PDF" in the browser's print dialog. Only your own sheet is printed (description, traits, secrets, relationships, objectives), never GM hints. The GM can open *Print all sheets* from the master sheet to print a handout page per player (select one character to get one PDF per player).
